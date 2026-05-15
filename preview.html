@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storyboard Formatter</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{
+  --ink:#1a1a1a;
+  --paper:#f5f2eb;
+  --line:#b0a898;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:"Courier New", monospace !important;
+  font-weight:normal !important;
+}
+
+body{
+  background:#d6d0c4;
+  color:var(--ink);
+  min-height:100vh;
+  padding:32px 16px 48px;
+  background-image:
+  repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 27px,
+    rgba(0,0,0,0.04) 27px,
+    rgba(0,0,0,0.04) 28px
+  );
+}
+
+header{
+  text-align:center;
+  margin-bottom:32px;
+}
+
+header h1{
+  font-size:2rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+header p{
+  margin-top:6px;
+  color:#666;
+  font-size:.85rem;
+}
+
+/* upload */
+
+.upload-zone{
+  background:var(--paper);
+  border:2px dashed var(--line);
+  max-width:900px;
+  margin:0 auto 24px;
+  padding:36px;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+}
+
+.upload-zone.drag{
+  border-color:var(--ink);
+}
+
+.upload-zone input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  cursor:pointer;
+}
+
+.upload-zone span{
+  letter-spacing:.08em;
+}
+
+/* controls */
+
+.controls{
+  max-width:1100px;
+  margin:0 auto 24px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  align-items:flex-end;
+  background:var(--paper);
+  border:1px solid var(--line);
+  padding:18px;
+}
+
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.field label{
+  font-size:.7rem;
+  text-transform:uppercase;
+  color:#666;
+}
+
+.field input,
+.field select{
+  border:none;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+  padding:4px 2px;
+  outline:none;
+  min-width:110px;
+}
+
+button{
+  cursor:pointer;
+}
+
+.btn,
+.btn-outline{
+  padding:10px 16px;
+  border:none;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.btn{
+  background:var(--ink);
+  color:white;
+}
+
+.btn-outline{
+  background:transparent;
+  border:1px solid var(--ink);
+}
+
+/* editor */
+
+#panel-editor{
+  max-width:1100px;
+  margin:0 auto 24px;
+  display:none;
+}
+
+#panel-editor h2{
+  margin-bottom:12px;
+  text-transform:uppercase;
+  font-size:.9rem;
+}
+
+.pe-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.pe-card{
+  background:var(--paper);
+  border:1px solid var(--line);
+  display:grid;
+  grid-template-columns:32px 28px 110px 1fr 1fr 1fr 40px;
+  min-height:120px;
+}
+
+.pe-drag{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:grab;
+  border-right:1px solid var(--line);
+  color:#999;
+}
+
+.pe-num{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-right:1px solid var(--line);
+  font-size:.7rem;
+  color:#888;
+}
+
+.pe-thumb{
+  width:110px;
+  height:100%;
+  object-fit:cover;
+  border-right:1px solid var(--line);
+}
+
+.pe-placeholder{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#aaa;
+  border-right:1px solid var(--line);
+  font-size:.75rem;
+}
+
+.pe-cell{
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  border-right:1px solid var(--line);
+}
+
+.pe-cell label{
+  font-size:.65rem;
+  text-transform:uppercase;
+  color:#777;
+}
+
+.pe-cell textarea{
+  resize:none;
+  border:none;
+  border-bottom:1px solid #ccc;
+  background:transparent;
+  min-height:50px;
+  outline:none;
+}
+
+.pe-del{
+  border:none;
+  background:transparent;
+  color:#999;
+  font-size:1rem;
+}
+
+.pe-del:hover{
+  color:#c0392b;
+}
+
+/* board */
+
+#board-wrap{
+  max-width:1200px;
+  margin:0 auto;
+  display:none;
+}
+
+.storyboard-page{
+  background:white;
+  border:1px solid #999;
+  margin-bottom:40px;
+}
+
+.storyboard-page.a4.landscape{
+  width:1123px;
+  min-height:794px;
+}
+
+.storyboard-page.letter.landscape{
+  width:1056px;
+  min-height:816px;
+}
+
+.storyboard-page.a4.portrait{
+  width:794px;
+  min-height:1123px;
+}
+
+.storyboard-page.letter.portrait{
+  width:816px;
+  min-height:1056px;
+}
+
+.sb-header{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border-bottom:1px solid #111;
+}
+
+.sb-header-cell{
+  padding:6px 10px;
+  border-right:1px solid #111;
+}
+
+.sb-header-cell:last-child{
+  border-right:none;
+}
+
+.label{
+  font-size:.6rem;
+  color:#777;
+  text-transform:uppercase;
+}
+
+.value{
+  font-size:.9rem;
+}
+
+.sb-grid{
+  display:grid;
+  gap:12px;
+  padding:12px;
+}
+
+.cols-1{
+  grid-template-columns:1fr;
+}
+
+.cols-2{
+  grid-template-columns:1fr 1fr;
+}
+
+.cols-3{
+  grid-template-columns:1fr 1fr 1fr;
+}
+
+.sb-panel{
+  border:1px solid #111;
+  display:flex;
+  flex-direction:column;
+}
+
+.sb-panel-header{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid #111;
+}
+
+.sb-panel-header div{
+  padding:4px 6px;
+  border-right:1px solid #111;
+}
+
+.sb-panel-header div:last-child{
+  border-right:none;
+}
+
+.ph-label{
+  font-size:.58rem;
+  color:#777;
+  display:block;
+}
+
+.ph-val{
+  font-size:.75rem;
+}
+
+.sb-frame{
+  aspect-ratio:16/9;
+  overflow:hidden;
+  background:white;
+}
+
+.sb-frame img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.sb-frame.contain img{
+  object-fit:contain;
+}
+
+.sb-placeholder{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px dashed #bbb;
+  color:#aaa;
+  font-size:.8rem;
+}
+
+.sb-strip{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border-top:1px solid #111;
+}
+
+.sb-strip-cell{
+  padding:6px;
+  border-right:1px solid #111;
+}
+
+.sb-strip-cell:last-child{
+  border-right:none;
+}
+
+.sl{
+  font-size:.58rem;
+  text-transform:uppercase;
+  color:#777;
+  display:block;
+  margin-bottom:4px;
+}
+
+.content{
+  white-space:pre-wrap;
+  font-size:.72rem;
+  line-height:1.45;
+}
+
+.sb-notes{
+  border-top:1px solid #111;
+  padding:6px;
+  font-size:.72rem;
+  white-space:pre-wrap;
+}
+
+.page-number{
+  border-top:1px solid #111;
+  padding:8px;
+  text-align:right;
+  font-size:.7rem;
+  color:#666;
+}
+
+/* actions */
+
+.board-actions{
+  max-width:1100px;
+  margin:0 auto 40px;
+  display:none;
+  gap:10px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+
+/* overlay */
+
+#export-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+
+#export-overlay.active{
+  display:flex;
+}
+
+.export-box{
+  background:white;
+  border:1px solid #111;
+  padding:30px;
+}
+
+@media print{
+
+  body{
+    background:white;
+    padding:0;
+  }
+
+  header,
+  .upload-zone,
+  .controls,
+  #panel-editor,
+  .board-actions{
+    display:none !important;
+  }
+
+  #board-wrap{
+    display:block !important;
+  }
+
+  @page{
+    size:landscape;
+    margin:10mm;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Storyboard Formatter</h1>
+  <p>Upload images • write notes • export PNG / PDF</p>
+</header>
+
+<div class="upload-zone" id="dropzone">
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  <span>Drop images here or click to upload</span>
+</div>
+
+<div class="controls">
+
+  <div class="field">
+    <label>Project</label>
+    <input type="text" id="projTitle" value="Untitled Project">
+  </div>
+
+  <div class="field">
+    <label>Scene</label>
+    <input type="text" id="sceneNum" value="001">
+  </div>
+
+  <div class="field">
+    <label>Columns</label>
+    <select id="colCount">
+      <option value="1">1</option>
+      <option value="2" selected>2</option>
+      <option value="3">3</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Image Fit</label>
+    <select id="imgFit">
+      <option value="">Cover</option>
+      <option value="contain">Contain</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Page Size</label>
+    <select id="pageSize">
+      <option value="a4">A4</option>
+      <option value="letter">Letter</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Orientation</label>
+    <select id="orientation">
+      <option value="landscape">Landscape</option>
+      <option value="portrait">Portrait</option>
+    </select>
+  </div>
+
+  <button class="btn-outline" id="addEmptyPanelBtn">
+    + Empty Panel
+  </button>
+
+  <button class="btn-outline" id="saveStoryboardBtn">
+    Save .storyboard
+  </button>
+
+  <label class="btn-outline" style="display:flex;align-items:center;">
+    Load .storyboard
+    <input type="file" id="loadStoryboardInput" hidden>
+  </label>
+
+  <button class="btn" id="generateBtn" disabled>
+    Generate Board
+  </button>
+
+</div>
+
+<div id="panel-editor">
+  <h2>Panel Editor</h2>
+  <div class="pe-list" id="pe-list"></div>
+</div>
+
+<div id="board-wrap"></div>
+
+<div class="board-actions" id="board-actions">
+
+  <button class="btn-outline" id="regenBtn">
+    Refresh
+  </button>
+
+  <button class="btn-outline" onclick="window.print()">
+    Print / PDF
+  </button>
+
+  <button class="btn" id="exportPngBtn">
+    Export PNG
+  </button>
+
+</div>
+
+<div id="export-overlay">
+  <div class="export-box">
+    Rendering storyboard...
+  </div>
+</div>
+
+<script>
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const generateBtn = document.getElementById('generateBtn');
+const boardWrap = document.getElementById('board-wrap');
+const boardActions = document.getElementById('board-actions');
+const panelEditor = document.getElementById('panel-editor');
+const peList = document.getElementById('pe-list');
+const exportOverlay = document.getElementById('export-overlay');
+
+let panels = [];
+
+/* upload */
+
+dropzone.addEventListener('dragover', e=>{
+  e.preventDefault();
+  dropzone.classList.add('drag');
+});
+
+dropzone.addEventListener('dragleave', ()=>{
+  dropzone.classList.remove('drag');
+});
+
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+
+  addFiles(
+    [...e.dataTransfer.files]
+    .filter(f=>f.type.startsWith('image/'))
+  );
+});
+
+fileInput.addEventListener('change', ()=>{
+  addFiles([...fileInput.files]);
+  fileInput.value='';
+});
+
+async function addFiles(files){
+
+  for(const file of files){
+
+    const dataUrl = await fileToDataURL(file);
+
+    panels.push({
+      dataUrl,
+      action:'',
+      dialogue:'',
+      notes:'',
+      shotType:'WS'
+    });
+  }
+
+  rebuildEditor();
+  updateUploadLabel();
+
+  generateBtn.disabled = panels.length===0;
+
+  autoSaveLocal();
+}
+
+/* empty panel */
+
+document.getElementById('addEmptyPanelBtn')
+.addEventListener('click', ()=>{
+
+  panels.push({
+    dataUrl:'',
+    action:'',
+    dialogue:'',
+    notes:'',
+    shotType:'WS'
+  });
+
+  rebuildEditor();
+
+  generateBtn.disabled = false;
+
+  autoSaveLocal();
+});
+
+/* editor */
+
+function rebuildEditor(){
+
+  if(!panels.length){
+    panelEditor.style.display='none';
+    return;
+  }
+
+  panelEditor.style.display='block';
+
+  peList.innerHTML='';
+
+  panels.forEach((p,i)=>{
+
+    const card = document.createElement('div');
+
+    card.className='pe-card';
+
+    card.innerHTML=`
+
+      <div class="pe-drag">☰</div>
+
+      <div class="pe-num">
+        ${String(i+1).padStart(3,'0')}
+      </div>
+
+      ${
+        p.dataUrl
+        ? `<img class="pe-thumb" src="${p.dataUrl}">`
+        : `<div class="pe-placeholder">EMPTY</div>`
+      }
+
+      <div class="pe-cell">
+
+        <label>Shot Type</label>
+
+        <select data-field="shotType" data-idx="${i}">
+          <option ${p.shotType==='WS'?'selected':''}>WS</option>
+          <option ${p.shotType==='MS'?'selected':''}>MS</option>
+          <option ${p.shotType==='CU'?'selected':''}>CU</option>
+          <option ${p.shotType==='OTS'?'selected':''}>OTS</option>
+          <option ${p.shotType==='ECU'?'selected':''}>ECU</option>
+        </select>
+
+        <label>Action</label>
+
+        <textarea
+        data-field="action"
+        data-idx="${i}"
+        >${esc(p.action)}</textarea>
+
+      </div>
+
+      <div class="pe-cell">
+
+        <label>Dialogue</label>
+
+        <textarea
+        data-field="dialogue"
+        data-idx="${i}"
+        >${esc(p.dialogue)}</textarea>
+
+      </div>
+
+      <div class="pe-cell">
+
+        <label>Notes</label>
+
+        <textarea
+        data-field="notes"
+        data-idx="${i}"
+        >${esc(p.notes)}</textarea>
+
+      </div>
+
+      <button class="pe-del" data-idx="${i}">
+        ✕
+      </button>
+    `;
+
+    peList.appendChild(card);
+  });
+
+  peList.querySelectorAll('textarea, select')
+  .forEach(el=>{
+
+    el.addEventListener('input', ()=>{
+
+      const idx = +el.dataset.idx;
+      const field = el.dataset.field;
+
+      panels[idx][field] = el.value;
+
+      autoSaveLocal();
+    });
+  });
+
+  peList.querySelectorAll('.pe-del')
+  .forEach(btn=>{
+
+    btn.addEventListener('click', ()=>{
+
+      panels.splice(+btn.dataset.idx,1);
+
+      rebuildEditor();
+
+      generateBtn.disabled = panels.length===0;
+
+      updateUploadLabel();
+
+      clearBoard();
+
+      autoSaveLocal();
+    });
+  });
+}
+
+/* generate */
+
+generateBtn.addEventListener('click', generateBoard);
+
+document.getElementById('regenBtn')
+.addEventListener('click', generateBoard);
+
+function generateBoard(){
+
+  const title =
+  document.getElementById('projTitle').value
+  || 'Untitled';
+
+  const scene =
+  document.getElementById('sceneNum').value
+  || '001';
+
+  const cols =
+  parseInt(document.getElementById('colCount').value);
+
+  const fit =
+  document.getElementById('imgFit').value;
+
+  const pageSize =
+  document.getElementById('pageSize').value;
+
+  const orientation =
+  document.getElementById('orientation').value;
+
+  boardWrap.innerHTML='';
+
+  boardWrap.style.display='block';
+
+  boardActions.style.display='flex';
+
+  const page = document.createElement('div');
+
+  page.className =
+  `storyboard-page ${pageSize} ${orientation}`;
+
+  page.id='sb-page';
+
+  page.innerHTML=`
+    <div class="sb-header">
+
+      <div class="sb-header-cell">
+        <span class="label">Project</span>
+        <span class="value">${esc(title)}</span>
+      </div>
+
+      <div class="sb-header-cell">
+        <span class="label">Scene</span>
+        <span class="value">${esc(scene)}</span>
+      </div>
+
+    </div>
+  `;
+
+  const grid = document.createElement('div');
+
+  grid.className = `sb-grid cols-${cols}`;
+
+  panels.forEach((p,i)=>{
+
+    const num = String(i+1).padStart(3,'0');
+
+    const panel = document.createElement('div');
+
+    panel.className='sb-panel';
+
+    panel.innerHTML=`
+
+      <div class="sb-panel-header">
+
+        <div>
+          <span class="ph-label">Scene</span>
+          <span class="ph-val">${esc(scene)}</span>
+        </div>
+
+        <div>
+          <span class="ph-label">Panel</span>
+          <span class="ph-val">${num}</span>
+        </div>
+
+        <div>
+          <span class="ph-label">Shot</span>
+          <span class="ph-val">${esc(p.shotType)}</span>
+        </div>
+
+      </div>
+
+      <div class="sb-frame ${fit==='contain'?'contain':''}">
+
+        ${
+          p.dataUrl
+          ? `<img src="${p.dataUrl}">`
+          : `<div class="sb-placeholder">EMPTY PANEL</div>`
+        }
+
+      </div>
+
+      <div class="sb-strip">
+
+        <div class="sb-strip-cell">
+
+          <span class="sl">Action</span>
+
+          <div class="content">
+            ${esc(p.action || '—')}
+          </div>
+
+        </div>
+
+        <div class="sb-strip-cell">
+
+          <span class="sl">Dialogue</span>
+
+          <div class="content">
+            ${esc(p.dialogue || '—')}
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="sb-notes">
+        ${esc(p.notes || '—')}
+      </div>
+    `;
+
+    grid.appendChild(panel);
+  });
+
+  page.appendChild(grid);
+
+  page.innerHTML += `
+    <div class="page-number">
+      Page 1
+    </div>
+  `;
+
+  boardWrap.appendChild(page);
+
+  autoSaveLocal();
+}
+
+/* png export */
+
+document.getElementById('exportPngBtn')
+.addEventListener('click', async ()=>{
+
+  const page = document.getElementById('sb-page');
+
+  if(!page){
+    alert('Generate board first');
+    return;
+  }
+
+  exportOverlay.classList.add('active');
+
+  const canvas = await html2canvas(page,{
+    scale:4,
+    backgroundColor:'#fff',
+    useCORS:true
+  });
+
+  const a = document.createElement('a');
+
+  a.download='storyboard.png';
+
+  a.href = canvas.toDataURL('image/png',1);
+
+  a.click();
+
+  exportOverlay.classList.remove('active');
+});
+
+/* save */
+
+document.getElementById('saveStoryboardBtn')
+.addEventListener('click', ()=>{
+
+  const data = {
+    title:document.getElementById('projTitle').value,
+    scene:document.getElementById('sceneNum').value,
+    cols:document.getElementById('colCount').value,
+    fit:document.getElementById('imgFit').value,
+    pageSize:document.getElementById('pageSize').value,
+    orientation:document.getElementById('orientation').value,
+    panels
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(data,null,2)],
+    {type:'application/json'}
+  );
+
+  const a = document.createElement('a');
+
+  a.href = URL.createObjectURL(blob);
+
+  a.download =
+  `${data.title || 'storyboard'}.storyboard`;
+
+  a.click();
+});
+
+/* load */
+
+document.getElementById('loadStoryboardInput')
+.addEventListener('change', async e=>{
+
+  const file = e.target.files[0];
+
+  if(!file) return;
+
+  const text = await file.text();
+
+  const data = JSON.parse(text);
+
+  panels = data.panels || [];
+
+  document.getElementById('projTitle').value =
+  data.title || '';
+
+  document.getElementById('sceneNum').value =
+  data.scene || '001';
+
+  document.getElementById('colCount').value =
+  data.cols || '2';
+
+  document.getElementById('imgFit').value =
+  data.fit || '';
+
+  document.getElementById('pageSize').value =
+  data.pageSize || 'a4';
+
+  document.getElementById('orientation').value =
+  data.orientation || 'landscape';
+
+  rebuildEditor();
+
+  generateBtn.disabled = panels.length===0;
+
+  updateUploadLabel();
+
+  generateBoard();
+});
+
+/* autosave */
+
+function autoSaveLocal(){
+
+  localStorage.setItem(
+    'storyboard_autosave',
+    JSON.stringify({
+      panels,
+      title:document.getElementById('projTitle').value,
+      scene:document.getElementById('sceneNum').value
+    })
+  );
+}
+
+window.addEventListener('load', ()=>{
+
+  const saved =
+  localStorage.getItem('storyboard_autosave');
+
+  if(!saved) return;
+
+  try{
+
+    const data = JSON.parse(saved);
+
+    panels = data.panels || [];
+
+    document.getElementById('projTitle').value =
+    data.title || 'Untitled';
+
+    document.getElementById('sceneNum').value =
+    data.scene || '001';
+
+    rebuildEditor();
+
+    generateBtn.disabled = panels.length===0;
+
+    updateUploadLabel();
+
+  }catch(err){
+    console.error(err);
+  }
+});
+
+/* helpers */
+
+function clearBoard(){
+
+  boardWrap.innerHTML='';
+
+  boardWrap.style.display='none';
+
+  boardActions.style.display='none';
+}
+
+function updateUploadLabel(){
+
+  dropzone.querySelector('span').textContent =
+
+  panels.length===0
+  ? 'Drop images here or click to upload'
+  : `${panels.length} panel(s) loaded`;
+}
+
+function fileToDataURL(file){
+
+  return new Promise((res,rej)=>{
+
+    const r = new FileReader();
+
+    r.onload = ()=>res(r.result);
+
+    r.onerror = rej;
+
+    r.readAsDataURL(file);
+  });
+}
+
+function esc(str){
+
+  return String(str || '')
+  .replace(/[&<>"']/g, c=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[c]));
+}
+
+</script>
+</body>
+</html>
