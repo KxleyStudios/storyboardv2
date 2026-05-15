@@ -467,6 +467,13 @@ button{
     display:block !important;
   }
 
+  .storyboard-page{
+    page-break-after:always;
+    break-after:page;
+    margin-bottom:0;
+    border:none;
+  }
+
   @page{
     size:landscape;
     margin:10mm;
@@ -800,6 +807,19 @@ function rebuildEditor(){
   });
 }
 
+/* pagination helper */
+
+function chunkPanels(panelsArray, cols) {
+  const perPage = cols * 2; // 2 rows per page
+  const pages = [];
+
+  for (let i = 0; i < panelsArray.length; i += perPage) {
+    pages.push(panelsArray.slice(i, i + perPage));
+  }
+
+  return pages;
+}
+
 /* generate */
 
 generateBtn.addEventListener('click', generateBoard);
@@ -835,113 +855,116 @@ function generateBoard(){
 
   boardActions.style.display='flex';
 
-  const page = document.createElement('div');
+  const pages = chunkPanels(panels, cols);
 
-  page.className =
-  `storyboard-page ${pageSize} ${orientation}`;
+  pages.forEach((pagePanels, pageIndex) => {
 
-  page.id='sb-page';
+    const page = document.createElement('div');
 
-  page.innerHTML=`
-    <div class="sb-header">
+    page.className = `storyboard-page ${pageSize} ${orientation}`;
 
-      <div class="sb-header-cell">
-        <span class="label">Project</span>
-        <span class="value">${esc(title)}</span>
-      </div>
+    page.innerHTML = `
+      <div class="sb-header">
 
-      <div class="sb-header-cell">
-        <span class="label">Scene</span>
-        <span class="value">${esc(scene)}</span>
-      </div>
-
-    </div>
-  `;
-
-  const grid = document.createElement('div');
-
-  grid.className = `sb-grid cols-${cols}`;
-
-  panels.forEach((p,i)=>{
-
-    const num = String(i+1).padStart(3,'0');
-
-    const panel = document.createElement('div');
-
-    panel.className='sb-panel';
-
-    panel.innerHTML=`
-
-      <div class="sb-panel-header">
-
-        <div>
-          <span class="ph-label">Scene</span>
-          <span class="ph-val">${esc(scene)}</span>
+        <div class="sb-header-cell">
+          <span class="label">Project</span>
+          <span class="value">${esc(title)}</span>
         </div>
 
-        <div>
-          <span class="ph-label">Panel</span>
-          <span class="ph-val">${num}</span>
+        <div class="sb-header-cell">
+          <span class="label">Scene</span>
+          <span class="value">${esc(scene)}</span>
         </div>
 
-        <div>
-          <span class="ph-label">Shot</span>
-          <span class="ph-val">${shotLabels[p.shotType] || p.shotType}</span>
-        </div>
-
-      </div>
-
-      <div class="sb-frame ${fit==='contain'?'contain':''}">
-
-        ${
-          p.dataUrl
-          ? `<img src="${p.dataUrl}">`
-          : `<div class="sb-placeholder">EMPTY PANEL</div>`
-        }
-
-      </div>
-
-      <div class="sb-strip">
-
-        <div class="sb-strip-cell">
-
-          <span class="sl">Action</span>
-
-          <div class="content">
-            ${esc(p.action || '—')}
-          </div>
-
-        </div>
-
-        <div class="sb-strip-cell">
-
-          <span class="sl">Dialogue</span>
-
-          <div class="content">
-            ${esc(p.dialogue || '—')}
-          </div>
-
-        </div>
-
-      </div>
-
-      <div class="sb-notes">
-        ${esc(p.notes || '—')}
       </div>
     `;
 
-    grid.appendChild(panel);
+    const grid = document.createElement('div');
+
+    grid.className = `sb-grid cols-${cols}`;
+
+    pagePanels.forEach((p, i) => {
+
+      const globalIndex = pageIndex * (cols * 2) + i + 1;
+      const num = String(globalIndex).padStart(3,'0');
+
+      const panel = document.createElement('div');
+
+      panel.className = 'sb-panel';
+
+      panel.innerHTML = `
+
+        <div class="sb-panel-header">
+
+          <div>
+            <span class="ph-label">Scene</span>
+            <span class="ph-val">${esc(scene)}</span>
+          </div>
+
+          <div>
+            <span class="ph-label">Panel</span>
+            <span class="ph-val">${num}</span>
+          </div>
+
+          <div>
+            <span class="ph-label">Shot</span>
+            <span class="ph-val">${shotLabels[p.shotType] || p.shotType}</span>
+          </div>
+
+        </div>
+
+        <div class="sb-frame ${fit==='contain'?'contain':''}">
+
+          ${
+            p.dataUrl
+            ? `<img src="${p.dataUrl}">`
+            : `<div class="sb-placeholder">EMPTY PANEL</div>`
+          }
+
+        </div>
+
+        <div class="sb-strip">
+
+          <div class="sb-strip-cell">
+
+            <span class="sl">Action</span>
+
+            <div class="content">
+              ${esc(p.action || '—')}
+            </div>
+
+          </div>
+
+          <div class="sb-strip-cell">
+
+            <span class="sl">Dialogue</span>
+
+            <div class="content">
+              ${esc(p.dialogue || '—')}
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="sb-notes">
+          ${esc(p.notes || '—')}
+        </div>
+      `;
+
+      grid.appendChild(panel);
+    });
+
+    page.appendChild(grid);
+
+    const pageNum = document.createElement('div');
+    pageNum.className = 'page-number';
+    pageNum.textContent = `Page ${pageIndex + 1}`;
+
+    page.appendChild(pageNum);
+
+    boardWrap.appendChild(page);
   });
-
-  page.appendChild(grid);
-
-  page.innerHTML += `
-    <div class="page-number">
-      Page 1
-    </div>
-  `;
-
-  boardWrap.appendChild(page);
 
   autoSaveLocal();
 }
@@ -951,28 +974,33 @@ function generateBoard(){
 document.getElementById('exportPngBtn')
 .addEventListener('click', async ()=>{
 
-  const page = document.getElementById('sb-page');
+  const pages = document.querySelectorAll('.storyboard-page');
 
-  if(!page){
+  if(pages.length === 0){
     alert('Generate board first');
     return;
   }
 
   exportOverlay.classList.add('active');
 
-  const canvas = await html2canvas(page,{
-    scale:4,
-    backgroundColor:'#fff',
-    useCORS:true
-  });
+  for(let i = 0; i < pages.length; i++){
+    const page = pages[i];
+    const canvas = await html2canvas(page, {
+      scale:4,
+      backgroundColor:'#fff',
+      useCORS:true
+    });
 
-  const a = document.createElement('a');
+    const a = document.createElement('a');
+    a.download = `storyboard-page-${i+1}.png`;
+    a.href = canvas.toDataURL('image/png', 1);
+    a.click();
 
-  a.download='storyboard.png';
-
-  a.href = canvas.toDataURL('image/png',1);
-
-  a.click();
+    // Small delay between exports
+    if(i < pages.length - 1){
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
 
   exportOverlay.classList.remove('active');
 });
@@ -998,135 +1026,120 @@ document.getElementById('saveStoryboardBtn')
   );
 
   const a = document.createElement('a');
-
+  a.download='storyboard.json';
   a.href = URL.createObjectURL(blob);
-
-  a.download =
-  `${data.title || 'storyboard'}.storyboard`;
-
   a.click();
 });
 
 /* load */
 
 document.getElementById('loadStoryboardInput')
-.addEventListener('change', async e=>{
-
+.addEventListener('change', (e) => {
   const file = e.target.files[0];
+  if (!file) return;
 
-  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
 
-  const text = await file.text();
+      document.getElementById('projTitle').value = data.title || 'Untitled Project';
+      document.getElementById('sceneNum').value = data.scene || '001';
+      document.getElementById('colCount').value = data.cols || '2';
+      document.getElementById('imgFit').value = data.fit || '';
+      document.getElementById('pageSize').value = data.pageSize || 'a4';
+      document.getElementById('orientation').value = data.orientation || 'landscape';
 
-  const data = JSON.parse(text);
+      panels = data.panels || [];
 
-  document.getElementById('projTitle').value=data.title;
-
-  document.getElementById('sceneNum').value=data.scene;
-
-  document.getElementById('colCount').value=data.cols;
-
-  document.getElementById('imgFit').value=data.fit;
-
-  document.getElementById('pageSize').value=data.pageSize;
-
-  document.getElementById('orientation').value=data.orientation;
-
-  panels = data.panels;
-
-  rebuildEditor();
-
-  generateBtn.disabled = false;
-
-  updateUploadLabel();
-
-  autoSaveLocal();
+      rebuildEditor();
+      generateBtn.disabled = panels.length === 0;
+      updateUploadLabel();
+      autoSaveLocal();
+    } catch (err) {
+      alert('Error loading storyboard: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 });
 
-/* auto save */
+/* utilities */
 
-function autoSaveLocal(){
-  const data = {
-    title:document.getElementById('projTitle').value,
-    scene:document.getElementById('sceneNum').value,
-    cols:document.getElementById('colCount').value,
-    fit:document.getElementById('imgFit').value,
-    pageSize:document.getElementById('pageSize').value,
-    orientation:document.getElementById('orientation').value,
-    panels
-  };
-
-  localStorage.setItem('storyboardDraft',JSON.stringify(data));
-}
-
-function loadFromLocal(){
-  const saved = localStorage.getItem('storyboardDraft');
-
-  if(!saved) return;
-
-  try{
-    const data = JSON.parse(saved);
-
-    document.getElementById('projTitle').value=data.title;
-
-    document.getElementById('sceneNum').value=data.scene;
-
-    document.getElementById('colCount').value=data.cols;
-
-    document.getElementById('imgFit').value=data.fit;
-
-    document.getElementById('pageSize').value=data.pageSize;
-
-    document.getElementById('orientation').value=data.orientation;
-
-    panels = data.panels;
-
-    rebuildEditor();
-
-    generateBtn.disabled = panels.length===0;
-
-    updateUploadLabel();
-  }catch(e){
-    console.log('Could not restore draft');
-  }
-}
-
-function clearBoard(){
-  boardWrap.innerHTML='';
-  boardWrap.style.display='none';
-  boardActions.style.display='none';
-}
-
-function esc(str){
-  if(!str) return '';
+function esc(str) {
+  if (!str) return '';
   return String(str)
-  .replace(/&/g,'&amp;')
-  .replace(/</g,'&lt;')
-  .replace(/>/g,'&gt;')
-  .replace(/"/g,'&quot;')
-  .replace(/'/g,'&#039;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-function updateUploadLabel(){
-  const count = panels.length;
-  if(count===0){
-    document.querySelector('.upload-zone span').textContent='Drop images here or click to upload';
-  }else{
-    document.querySelector('.upload-zone span').textContent=`${count} panel${count!==1?'s':''} loaded`;
-  }
-}
-
-async function fileToDataURL(file){
-  return new Promise((resolve,reject)=>{
+function fileToDataURL(file) {
+  return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = e=>resolve(e.target.result);
-    reader.onerror = reject;
+    reader.onload = (e) => resolve(e.target.result);
     reader.readAsDataURL(file);
   });
 }
 
-/* init */
-loadFromLocal();
+function updateUploadLabel(){
+  const count = panels.length;
+  const label = count === 0
+    ? 'Drop images here or click to upload'
+    : `${count} image${count !== 1 ? 's' : ''} loaded`;
+  document.querySelector('.upload-zone span').textContent = label;
+}
+
+function clearBoard(){
+  boardWrap.innerHTML = '';
+  boardWrap.style.display = 'none';
+  boardActions.style.display = 'none';
+}
+
+function autoSaveLocal(){
+  if(panels.length > 0){
+    const data = {
+      title: document.getElementById('projTitle').value,
+      scene: document.getElementById('sceneNum').value,
+      cols: document.getElementById('colCount').value,
+      fit: document.getElementById('imgFit').value,
+      pageSize: document.getElementById('pageSize').value,
+      orientation: document.getElementById('orientation').value,
+      panels
+    };
+    try {
+      localStorage.setItem('storyboard_draft', JSON.stringify(data));
+    } catch (e) {
+      // Storage full or disabled
+    }
+  }
+}
+
+// Load on startup
+window.addEventListener('load', () => {
+  try {
+    const saved = localStorage.getItem('storyboard_draft');
+    if (saved) {
+      const data = JSON.parse(saved);
+      document.getElementById('projTitle').value = data.title || 'Untitled Project';
+      document.getElementById('sceneNum').value = data.scene || '001';
+      document.getElementById('colCount').value = data.cols || '2';
+      document.getElementById('imgFit').value = data.fit || '';
+      document.getElementById('pageSize').value = data.pageSize || 'a4';
+      document.getElementById('orientation').value = data.orientation || 'landscape';
+      panels = data.panels || [];
+      if (panels.length > 0) {
+        rebuildEditor();
+        generateBtn.disabled = false;
+        updateUploadLabel();
+      }
+    }
+  } catch (e) {
+    // Ignore load errors
+  }
+});
 
 </script>
 </body>
