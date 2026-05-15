@@ -6,6 +6,7 @@
 <title>Storyboard Formatter</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
@@ -175,6 +176,9 @@ button{
   cursor:grab;
   border-right:1px solid var(--line);
   color:#999;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
 }
 
 .pe-num{
@@ -453,6 +457,8 @@ button{
   body{
     background:white;
     padding:0;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
   }
 
   header,
@@ -465,19 +471,30 @@ button{
 
   #board-wrap{
     display:block !important;
+    max-width:none !important;
   }
 
   .storyboard-page{
+    border:none !important;
+    margin:0 !important;
     page-break-after:always;
     break-after:page;
-    margin-bottom:0;
-    border:none;
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
+
+  .sb-panel{
+    page-break-inside:avoid;
+    break-inside:avoid;
   }
 
   @page{
-    size:landscape;
-    margin:10mm;
+    size:auto;
+    margin:8mm;
   }
+
+  /* Hide browser print header/footer (date, URL, page number) */
+  @page :first{ margin-top:8mm; }
 }
 </style>
 </head>
@@ -570,12 +587,12 @@ button{
     Refresh
   </button>
 
-  <button class="btn-outline" onclick="window.print()">
-    Print / PDF
+  <button class="btn-outline" id="exportPngBtn">
+    Export PNG
   </button>
 
-  <button class="btn" id="exportPngBtn">
-    Export PNG
+  <button class="btn" id="exportPdfBtn">
+    Export PDF
   </button>
 
 </div>
@@ -805,19 +822,123 @@ function rebuildEditor(){
       autoSaveLocal();
     });
   });
+
+  // Drag-to-reorder
+  initDrag();
 }
 
-/* pagination helper */
+/* drag-to-reorder panels */
 
-function chunkPanels(panelsArray, cols) {
-  const perPage = cols * 2; // 2 rows per page
-  const pages = [];
+function initDrag(){
+  let dragSrc = null;
+  let placeholder = null;
 
-  for (let i = 0; i < panelsArray.length; i += perPage) {
-    pages.push(panelsArray.slice(i, i + perPage));
+  peList.querySelectorAll('.pe-drag').forEach(handle=>{
+    handle.addEventListener('mousedown', onDragStart);
+    handle.addEventListener('touchstart', onDragStart, {passive:false});
+  });
+
+  function onDragStart(e){
+    e.preventDefault();
+
+    const card = e.currentTarget.closest('.pe-card');
+    dragSrc = card;
+
+    const cards = [...peList.querySelectorAll('.pe-card')];
+    const idx = cards.indexOf(card);
+    const rect = card.getBoundingClientRect();
+
+    // Ghost element
+    const ghost = card.cloneNode(true);
+    ghost.id = 'drag-ghost';
+    ghost.style.cssText = `
+      position:fixed;
+      pointer-events:none;
+      z-index:9999;
+      width:${rect.width}px;
+      opacity:0.85;
+      box-shadow:0 4px 20px rgba(0,0,0,0.25);
+      top:${rect.top}px;
+      left:${rect.left}px;
+    `;
+    document.body.appendChild(ghost);
+
+    // Placeholder
+    placeholder = document.createElement('div');
+    placeholder.style.cssText = `
+      height:${rect.height}px;
+      border:2px dashed var(--line);
+      background:rgba(0,0,0,0.03);
+      margin-bottom:0;
+    `;
+
+    card.replaceWith(placeholder);
+
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    let offsetY = clientY - rect.top;
+
+    function onMove(e){
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      ghost.style.top = (cy - offsetY) + 'px';
+
+      // Find which card we're hovering over
+      const allCards = [...peList.querySelectorAll('.pe-card, #drag-placeholder')];
+      let target = null;
+      let insertBefore = true;
+
+      for(const c of peList.children){
+        if(c === placeholder) continue;
+        const r = c.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if(cy < mid){
+          target = c;
+          insertBefore = true;
+          break;
+        }
+        target = c;
+        insertBefore = false;
+      }
+
+      if(target){
+        if(insertBefore){
+          peList.insertBefore(placeholder, target);
+        } else {
+          target.after(placeholder);
+        }
+      } else {
+        peList.appendChild(placeholder);
+      }
+    }
+
+    function onUp(){
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+
+      ghost.remove();
+
+      // Figure out new order from DOM
+      const newOrder = [];
+      peList.querySelectorAll('.pe-card').forEach(c=>{
+        newOrder.push(panels[+c.querySelector('[data-idx]').dataset.idx]);
+      });
+
+      // Insert dragged panel at placeholder position
+      const phIdx = [...peList.children].indexOf(placeholder);
+      newOrder.splice(phIdx, 0, panels[idx]);
+
+      panels = newOrder;
+      rebuildEditor();
+      clearBoard();
+      autoSaveLocal();
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
   }
-
-  return pages;
 }
 
 /* generate */
@@ -850,121 +971,101 @@ function generateBoard(){
   document.getElementById('orientation').value;
 
   boardWrap.innerHTML='';
-
   boardWrap.style.display='block';
-
   boardActions.style.display='flex';
 
-  const pages = chunkPanels(panels, cols);
+  // Work out how many panels fit per page
+  // Portrait pages fit fewer rows than landscape
+  const rowsPerPage = (orientation==='portrait') ? 2 : 2;
+  const panelsPerPage = cols * rowsPerPage;
 
-  pages.forEach((pagePanels, pageIndex) => {
+  const totalPages = Math.ceil(panels.length / panelsPerPage);
+
+  for(let pg=0; pg<totalPages; pg++){
 
     const page = document.createElement('div');
-
     page.className = `storyboard-page ${pageSize} ${orientation}`;
+    if(pg===0) page.id='sb-page';
 
-    page.innerHTML = `
+    const pageHeaderHTML = `
       <div class="sb-header">
-
         <div class="sb-header-cell">
           <span class="label">Project</span>
           <span class="value">${esc(title)}</span>
         </div>
-
         <div class="sb-header-cell">
           <span class="label">Scene</span>
           <span class="value">${esc(scene)}</span>
         </div>
-
       </div>
     `;
 
-    const grid = document.createElement('div');
+    page.innerHTML = pageHeaderHTML;
 
+    const grid = document.createElement('div');
     grid.className = `sb-grid cols-${cols}`;
 
-    pagePanels.forEach((p, i) => {
+    const start = pg * panelsPerPage;
+    const end = Math.min(start + panelsPerPage, panels.length);
 
-      const globalIndex = pageIndex * (cols * 2) + i + 1;
-      const num = String(globalIndex).padStart(3,'0');
+    for(let i=start; i<end; i++){
+      const p = panels[i];
+      const num = String(i+1).padStart(3,'0');
 
       const panel = document.createElement('div');
+      panel.className='sb-panel';
 
-      panel.className = 'sb-panel';
-
-      panel.innerHTML = `
-
+      panel.innerHTML=`
         <div class="sb-panel-header">
-
           <div>
             <span class="ph-label">Scene</span>
             <span class="ph-val">${esc(scene)}</span>
           </div>
-
           <div>
             <span class="ph-label">Panel</span>
             <span class="ph-val">${num}</span>
           </div>
-
           <div>
             <span class="ph-label">Shot</span>
             <span class="ph-val">${shotLabels[p.shotType] || p.shotType}</span>
           </div>
-
         </div>
 
         <div class="sb-frame ${fit==='contain'?'contain':''}">
-
           ${
             p.dataUrl
             ? `<img src="${p.dataUrl}">`
             : `<div class="sb-placeholder">EMPTY PANEL</div>`
           }
-
         </div>
 
         <div class="sb-strip">
-
           <div class="sb-strip-cell">
-
             <span class="sl">Action</span>
-
-            <div class="content">
-              ${esc(p.action || '—')}
-            </div>
-
+            <div class="content">${esc(p.action || '—')}</div>
           </div>
-
           <div class="sb-strip-cell">
-
             <span class="sl">Dialogue</span>
-
-            <div class="content">
-              ${esc(p.dialogue || '—')}
-            </div>
-
+            <div class="content">${esc(p.dialogue || '—')}</div>
           </div>
-
         </div>
 
-        <div class="sb-notes">
-          ${esc(p.notes || '—')}
-        </div>
+        <div class="sb-notes">${esc(p.notes || '—')}</div>
       `;
 
       grid.appendChild(panel);
-    });
+    }
 
     page.appendChild(grid);
 
-    const pageNum = document.createElement('div');
-    pageNum.className = 'page-number';
-    pageNum.textContent = `Page ${pageIndex + 1}`;
-
-    page.appendChild(pageNum);
+    page.innerHTML += `
+      <div class="page-number">
+        ${pg+1} / ${totalPages}
+      </div>
+    `;
 
     boardWrap.appendChild(page);
-  });
+  }
 
   autoSaveLocal();
 }
@@ -974,32 +1075,108 @@ function generateBoard(){
 document.getElementById('exportPngBtn')
 .addEventListener('click', async ()=>{
 
-  const pages = document.querySelectorAll('.storyboard-page');
+  const pages = boardWrap.querySelectorAll('.storyboard-page');
 
-  if(pages.length === 0){
+  if(!pages.length){
     alert('Generate board first');
     return;
   }
 
   exportOverlay.classList.add('active');
+  document.querySelector('.export-box').textContent = 'Rendering PNG…';
 
-  for(let i = 0; i < pages.length; i++){
-    const page = pages[i];
-    const canvas = await html2canvas(page, {
-      scale:4,
+  try{
+    // If one page, export as single PNG; else zip not available, export first page
+    const page = pages[0];
+    const canvas = await html2canvas(page,{
+      scale:3,
       backgroundColor:'#fff',
-      useCORS:true
+      useCORS:true,
+      logging:false
     });
 
     const a = document.createElement('a');
-    a.download = `storyboard-page-${i+1}.png`;
-    a.href = canvas.toDataURL('image/png', 1);
+    a.download='storyboard.png';
+    a.href = canvas.toDataURL('image/png',1);
     a.click();
+  }catch(e){
+    alert('Export failed: '+e.message);
+  }
 
-    // Small delay between exports
-    if(i < pages.length - 1){
-      await new Promise(resolve => setTimeout(resolve, 500));
+  exportOverlay.classList.remove('active');
+});
+
+/* PDF export — renders each page via html2canvas, assembles with jsPDF */
+
+document.getElementById('exportPdfBtn')
+.addEventListener('click', async ()=>{
+
+  const pages = boardWrap.querySelectorAll('.storyboard-page');
+
+  if(!pages.length){
+    alert('Generate board first');
+    return;
+  }
+
+  exportOverlay.classList.add('active');
+  document.querySelector('.export-box').textContent = 'Building PDF…';
+
+  try{
+    const { jsPDF } = window.jspdf;
+
+    // Determine orientation from first page class
+    const firstPage = pages[0];
+    const isLandscape = firstPage.classList.contains('landscape');
+    const isA4 = firstPage.classList.contains('a4');
+
+    const pdfOrientation = isLandscape ? 'landscape' : 'portrait';
+    const pdfFormat = isA4 ? 'a4' : 'letter';
+
+    const pdf = new jsPDF({
+      orientation: pdfOrientation,
+      unit: 'mm',
+      format: pdfFormat,
+      compress: true
+    });
+
+    const pdfWidth  = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    for(let i=0; i<pages.length; i++){
+
+      document.querySelector('.export-box').textContent =
+        `Rendering page ${i+1} of ${pages.length}…`;
+
+      const canvas = await html2canvas(pages[i],{
+        scale:2,
+        backgroundColor:'#ffffff',
+        useCORS:true,
+        logging:false,
+        allowTaint:true
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgW = canvas.width;
+      const imgH = canvas.height;
+
+      // Fit image to PDF page maintaining aspect ratio
+      const ratio = Math.min(pdfWidth / imgW, pdfHeight / imgH);
+      const w = imgW * ratio;
+      const h = imgH * ratio;
+      const x = (pdfWidth  - w) / 2;
+      const y = (pdfHeight - h) / 2;
+
+      if(i > 0) pdf.addPage(pdfFormat, pdfOrientation);
+
+      pdf.addImage(imgData, 'JPEG', x, y, w, h);
     }
+
+    const title = document.getElementById('projTitle').value || 'storyboard';
+    pdf.save(`${title}.pdf`);
+
+  }catch(e){
+    alert('PDF export failed: '+e.message);
+    console.error(e);
   }
 
   exportOverlay.classList.remove('active');
@@ -1026,120 +1203,135 @@ document.getElementById('saveStoryboardBtn')
   );
 
   const a = document.createElement('a');
-  a.download='storyboard.json';
+
   a.href = URL.createObjectURL(blob);
+
+  a.download =
+  `${data.title || 'storyboard'}.storyboard`;
+
   a.click();
 });
 
 /* load */
 
 document.getElementById('loadStoryboardInput')
-.addEventListener('change', (e) => {
+.addEventListener('change', async e=>{
+
   const file = e.target.files[0];
-  if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      const data = JSON.parse(event.target.result);
+  if(!file) return;
 
-      document.getElementById('projTitle').value = data.title || 'Untitled Project';
-      document.getElementById('sceneNum').value = data.scene || '001';
-      document.getElementById('colCount').value = data.cols || '2';
-      document.getElementById('imgFit').value = data.fit || '';
-      document.getElementById('pageSize').value = data.pageSize || 'a4';
-      document.getElementById('orientation').value = data.orientation || 'landscape';
+  const text = await file.text();
 
-      panels = data.panels || [];
+  const data = JSON.parse(text);
 
-      rebuildEditor();
-      generateBtn.disabled = panels.length === 0;
-      updateUploadLabel();
-      autoSaveLocal();
-    } catch (err) {
-      alert('Error loading storyboard: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
+  document.getElementById('projTitle').value=data.title;
+
+  document.getElementById('sceneNum').value=data.scene;
+
+  document.getElementById('colCount').value=data.cols;
+
+  document.getElementById('imgFit').value=data.fit;
+
+  document.getElementById('pageSize').value=data.pageSize;
+
+  document.getElementById('orientation').value=data.orientation;
+
+  panels = data.panels;
+
+  rebuildEditor();
+
+  generateBtn.disabled = false;
+
+  updateUploadLabel();
+
+  autoSaveLocal();
 });
 
-/* utilities */
+/* auto save */
 
-function esc(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function autoSaveLocal(){
+  const data = {
+    title:document.getElementById('projTitle').value,
+    scene:document.getElementById('sceneNum').value,
+    cols:document.getElementById('colCount').value,
+    fit:document.getElementById('imgFit').value,
+    pageSize:document.getElementById('pageSize').value,
+    orientation:document.getElementById('orientation').value,
+    panels
+  };
+
+  localStorage.setItem('storyboardDraft',JSON.stringify(data));
 }
 
-function fileToDataURL(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.readAsDataURL(file);
-  });
+function loadFromLocal(){
+  const saved = localStorage.getItem('storyboardDraft');
+
+  if(!saved) return;
+
+  try{
+    const data = JSON.parse(saved);
+
+    document.getElementById('projTitle').value=data.title;
+
+    document.getElementById('sceneNum').value=data.scene;
+
+    document.getElementById('colCount').value=data.cols;
+
+    document.getElementById('imgFit').value=data.fit;
+
+    document.getElementById('pageSize').value=data.pageSize;
+
+    document.getElementById('orientation').value=data.orientation;
+
+    panels = data.panels;
+
+    rebuildEditor();
+
+    generateBtn.disabled = panels.length===0;
+
+    updateUploadLabel();
+  }catch(e){
+    console.log('Could not restore draft');
+  }
+}
+
+function clearBoard(){
+  boardWrap.innerHTML='';
+  boardWrap.style.display='none';
+  boardActions.style.display='none';
+}
+
+function esc(str){
+  if(!str) return '';
+  return String(str)
+  .replace(/&/g,'&amp;')
+  .replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;')
+  .replace(/'/g,'&#039;');
 }
 
 function updateUploadLabel(){
   const count = panels.length;
-  const label = count === 0
-    ? 'Drop images here or click to upload'
-    : `${count} image${count !== 1 ? 's' : ''} loaded`;
-  document.querySelector('.upload-zone span').textContent = label;
-}
-
-function clearBoard(){
-  boardWrap.innerHTML = '';
-  boardWrap.style.display = 'none';
-  boardActions.style.display = 'none';
-}
-
-function autoSaveLocal(){
-  if(panels.length > 0){
-    const data = {
-      title: document.getElementById('projTitle').value,
-      scene: document.getElementById('sceneNum').value,
-      cols: document.getElementById('colCount').value,
-      fit: document.getElementById('imgFit').value,
-      pageSize: document.getElementById('pageSize').value,
-      orientation: document.getElementById('orientation').value,
-      panels
-    };
-    try {
-      localStorage.setItem('storyboard_draft', JSON.stringify(data));
-    } catch (e) {
-      // Storage full or disabled
-    }
+  if(count===0){
+    document.querySelector('.upload-zone span').textContent='Drop images here or click to upload';
+  }else{
+    document.querySelector('.upload-zone span').textContent=`${count} panel${count!==1?'s':''} loaded`;
   }
 }
 
-// Load on startup
-window.addEventListener('load', () => {
-  try {
-    const saved = localStorage.getItem('storyboard_draft');
-    if (saved) {
-      const data = JSON.parse(saved);
-      document.getElementById('projTitle').value = data.title || 'Untitled Project';
-      document.getElementById('sceneNum').value = data.scene || '001';
-      document.getElementById('colCount').value = data.cols || '2';
-      document.getElementById('imgFit').value = data.fit || '';
-      document.getElementById('pageSize').value = data.pageSize || 'a4';
-      document.getElementById('orientation').value = data.orientation || 'landscape';
-      panels = data.panels || [];
-      if (panels.length > 0) {
-        rebuildEditor();
-        generateBtn.disabled = false;
-        updateUploadLabel();
-      }
-    }
-  } catch (e) {
-    // Ignore load errors
-  }
-});
+async function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* init */
+loadFromLocal();
 
 </script>
 </body>
