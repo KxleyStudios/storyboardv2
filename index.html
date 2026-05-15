@@ -592,6 +592,21 @@ const exportOverlay = document.getElementById('export-overlay');
 
 let panels = [];
 
+/* shot type labels */
+const shotLabels = {
+  WS:"Wide Shot",
+  LS:"Long Shot",
+  MS:"Medium Shot",
+  MCU:"Medium Close-Up",
+  CU:"Close-Up",
+  ECU:"Extreme Close-Up",
+  OTS:"Over Shoulder",
+  POV:"Point Of View",
+  "2S":"Two Shot",
+  INSERT:"Insert",
+  DUTCH:"Dutch Angle"
+};
+
 /* upload */
 
 dropzone.addEventListener('dragover', e=>{
@@ -699,11 +714,17 @@ function rebuildEditor(){
         <label>Shot Type</label>
 
         <select data-field="shotType" data-idx="${i}">
-          <option ${p.shotType==='WS'?'selected':''}>WS</option>
-          <option ${p.shotType==='MS'?'selected':''}>MS</option>
-          <option ${p.shotType==='CU'?'selected':''}>CU</option>
-          <option ${p.shotType==='OTS'?'selected':''}>OTS</option>
-          <option ${p.shotType==='ECU'?'selected':''}>ECU</option>
+          <option value="WS" ${p.shotType==='WS'?'selected':''}>WS (Wide Shot - full scene / full body)</option>
+          <option value="LS" ${p.shotType==='LS'?'selected':''}>LS (Long Shot - character in environment)</option>
+          <option value="MS" ${p.shotType==='MS'?'selected':''}>MS (Medium Shot - waist up)</option>
+          <option value="MCU" ${p.shotType==='MCU'?'selected':''}>MCU (Medium Close-Up - chest up)</option>
+          <option value="CU" ${p.shotType==='CU'?'selected':''}>CU (Close-Up - face / detail)</option>
+          <option value="ECU" ${p.shotType==='ECU'?'selected':''}>ECU (Extreme Close-Up - extreme detail)</option>
+          <option value="OTS" ${p.shotType==='OTS'?'selected':''}>OTS (Over Shoulder - looking past character)</option>
+          <option value="POV" ${p.shotType==='POV'?'selected':''}>POV (Point of View - from character eyes)</option>
+          <option value="2S" ${p.shotType==='2S'?'selected':''}>2S (Two Shot - two characters)</option>
+          <option value="INSERT" ${p.shotType==='INSERT'?'selected':''}>INSERT (object detail shot)</option>
+          <option value="DUTCH" ${p.shotType==='DUTCH'?'selected':''}>DUTCH (tilted angle shot)</option>
         </select>
 
         <label>Action</label>
@@ -865,7 +886,7 @@ function generateBoard(){
 
         <div>
           <span class="ph-label">Shot</span>
-          <span class="ph-val">${esc(p.shotType)}</span>
+          <span class="ph-val">${shotLabels[p.shotType] || p.shotType}</span>
         </div>
 
       </div>
@@ -999,124 +1020,113 @@ document.getElementById('loadStoryboardInput')
 
   const data = JSON.parse(text);
 
-  panels = data.panels || [];
+  document.getElementById('projTitle').value=data.title;
 
-  document.getElementById('projTitle').value =
-  data.title || '';
+  document.getElementById('sceneNum').value=data.scene;
 
-  document.getElementById('sceneNum').value =
-  data.scene || '001';
+  document.getElementById('colCount').value=data.cols;
 
-  document.getElementById('colCount').value =
-  data.cols || '2';
+  document.getElementById('imgFit').value=data.fit;
 
-  document.getElementById('imgFit').value =
-  data.fit || '';
+  document.getElementById('pageSize').value=data.pageSize;
 
-  document.getElementById('pageSize').value =
-  data.pageSize || 'a4';
+  document.getElementById('orientation').value=data.orientation;
 
-  document.getElementById('orientation').value =
-  data.orientation || 'landscape';
+  panels = data.panels;
 
   rebuildEditor();
 
-  generateBtn.disabled = panels.length===0;
+  generateBtn.disabled = false;
 
   updateUploadLabel();
 
-  generateBoard();
+  autoSaveLocal();
 });
 
-/* autosave */
+/* auto save */
 
 function autoSaveLocal(){
+  const data = {
+    title:document.getElementById('projTitle').value,
+    scene:document.getElementById('sceneNum').value,
+    cols:document.getElementById('colCount').value,
+    fit:document.getElementById('imgFit').value,
+    pageSize:document.getElementById('pageSize').value,
+    orientation:document.getElementById('orientation').value,
+    panels
+  };
 
-  localStorage.setItem(
-    'storyboard_autosave',
-    JSON.stringify({
-      panels,
-      title:document.getElementById('projTitle').value,
-      scene:document.getElementById('sceneNum').value
-    })
-  );
+  localStorage.setItem('storyboardDraft',JSON.stringify(data));
 }
 
-window.addEventListener('load', ()=>{
-
-  const saved =
-  localStorage.getItem('storyboard_autosave');
+function loadFromLocal(){
+  const saved = localStorage.getItem('storyboardDraft');
 
   if(!saved) return;
 
   try{
-
     const data = JSON.parse(saved);
 
-    panels = data.panels || [];
+    document.getElementById('projTitle').value=data.title;
 
-    document.getElementById('projTitle').value =
-    data.title || 'Untitled';
+    document.getElementById('sceneNum').value=data.scene;
 
-    document.getElementById('sceneNum').value =
-    data.scene || '001';
+    document.getElementById('colCount').value=data.cols;
+
+    document.getElementById('imgFit').value=data.fit;
+
+    document.getElementById('pageSize').value=data.pageSize;
+
+    document.getElementById('orientation').value=data.orientation;
+
+    panels = data.panels;
 
     rebuildEditor();
 
     generateBtn.disabled = panels.length===0;
 
     updateUploadLabel();
-
-  }catch(err){
-    console.error(err);
+  }catch(e){
+    console.log('Could not restore draft');
   }
-});
-
-/* helpers */
+}
 
 function clearBoard(){
-
   boardWrap.innerHTML='';
-
   boardWrap.style.display='none';
-
   boardActions.style.display='none';
 }
 
-function updateUploadLabel(){
-
-  dropzone.querySelector('span').textContent =
-
-  panels.length===0
-  ? 'Drop images here or click to upload'
-  : `${panels.length} panel(s) loaded`;
+function esc(str){
+  if(!str) return '';
+  return String(str)
+  .replace(/&/g,'&amp;')
+  .replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;')
+  .replace(/'/g,'&#039;');
 }
 
-function fileToDataURL(file){
+function updateUploadLabel(){
+  const count = panels.length;
+  if(count===0){
+    document.querySelector('.upload-zone span').textContent='Drop images here or click to upload';
+  }else{
+    document.querySelector('.upload-zone span').textContent=`${count} panel${count!==1?'s':''} loaded`;
+  }
+}
 
-  return new Promise((res,rej)=>{
-
-    const r = new FileReader();
-
-    r.onload = ()=>res(r.result);
-
-    r.onerror = rej;
-
-    r.readAsDataURL(file);
+async function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
-function esc(str){
-
-  return String(str || '')
-  .replace(/[&<>"']/g, c=>({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[c]));
-}
+/* init */
+loadFromLocal();
 
 </script>
 </body>
