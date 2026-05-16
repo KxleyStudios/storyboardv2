@@ -4,496 +4,141 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Storyboard Formatter</title>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 :root{
   --ink:#1a1a1a;
   --paper:#f5f2eb;
   --line:#b0a898;
 }
-
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:"Courier New", monospace !important;
-  font-weight:normal !important;
-}
-
-body{
-  background:#d6d0c4;
-  color:var(--ink);
-  min-height:100vh;
-  padding:32px 16px 48px;
-  background-image:
-  repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 27px,
-    rgba(0,0,0,0.04) 27px,
-    rgba(0,0,0,0.04) 28px
-  );
-}
-
-header{
-  text-align:center;
-  margin-bottom:32px;
-}
-
-header h1{
-  font-size:2rem;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-}
-
-header p{
-  margin-top:6px;
-  color:#666;
-  font-size:.85rem;
-}
-
-/* upload */
-
-.upload-zone{
-  background:var(--paper);
-  border:2px dashed var(--line);
-  max-width:900px;
-  margin:0 auto 24px;
-  padding:36px;
-  text-align:center;
-  cursor:pointer;
-  position:relative;
-}
-
-.upload-zone.drag{
-  border-color:var(--ink);
-}
-
-.upload-zone input{
-  position:absolute;
-  inset:0;
-  opacity:0;
-  cursor:pointer;
-}
-
-.upload-zone span{
-  letter-spacing:.08em;
-}
-
-/* controls */
-
-.controls{
-  max-width:1100px;
-  margin:0 auto 24px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:14px;
-  align-items:flex-end;
-  background:var(--paper);
-  border:1px solid var(--line);
-  padding:18px;
-}
-
-.field{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-
-.field label{
-  font-size:.7rem;
-  text-transform:uppercase;
-  color:#666;
-}
-
-.field input,
-.field select{
-  border:none;
-  border-bottom:1px solid var(--line);
-  background:transparent;
-  padding:4px 2px;
-  outline:none;
-  min-width:110px;
-}
-
-button{
-  cursor:pointer;
-}
-
-.btn,
-.btn-outline{
-  padding:10px 16px;
-  border:none;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-}
-
-.btn{
-  background:var(--ink);
-  color:white;
-}
-
-.btn-outline{
-  background:transparent;
-  border:1px solid var(--ink);
-}
-
-/* editor */
-
-#panel-editor{
-  max-width:1100px;
-  margin:0 auto 24px;
-  display:none;
-}
-
-#panel-editor h2{
-  margin-bottom:12px;
-  text-transform:uppercase;
-  font-size:.9rem;
-}
-
-.pe-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.pe-card{
-  background:var(--paper);
-  border:1px solid var(--line);
-  display:grid;
-  grid-template-columns:32px 28px 110px 1fr 1fr 1fr 40px;
-  min-height:120px;
-}
-
-.pe-drag{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:grab;
-  border-right:1px solid var(--line);
-  color:#999;
-  user-select:none;
-  -webkit-user-select:none;
-  touch-action:none;
-}
-
-.pe-num{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-right:1px solid var(--line);
-  font-size:.7rem;
-  color:#888;
-}
-
-.pe-thumb{
-  width:110px;
-  height:100%;
-  object-fit:cover;
-  border-right:1px solid var(--line);
-}
-
-.pe-placeholder{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#aaa;
-  border-right:1px solid var(--line);
-  font-size:.75rem;
-}
-
-.pe-cell{
-  padding:8px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  border-right:1px solid var(--line);
-}
-
-.pe-cell label{
-  font-size:.65rem;
-  text-transform:uppercase;
-  color:#777;
-}
-
-.pe-cell textarea{
-  resize:none;
-  border:none;
-  border-bottom:1px solid #ccc;
-  background:transparent;
-  min-height:50px;
-  outline:none;
-}
-
-.pe-del{
-  border:none;
-  background:transparent;
-  color:#999;
-  font-size:1rem;
-}
-
-.pe-del:hover{
-  color:#c0392b;
-}
-
-/* board */
-
-#board-wrap{
-  max-width:1200px;
-  margin:0 auto;
-  display:none;
-}
-
-.storyboard-page{
-  background:white;
-  border:1px solid #999;
-  margin-bottom:40px;
-}
-
-.storyboard-page.a4.landscape{
-  width:1123px;
-  min-height:794px;
-}
-
-.storyboard-page.letter.landscape{
-  width:1056px;
-  min-height:816px;
-}
-
-.storyboard-page.a4.portrait{
-  width:794px;
-  min-height:1123px;
-}
-
-.storyboard-page.letter.portrait{
-  width:816px;
-  min-height:1056px;
-}
-
-.sb-header{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  border-bottom:1px solid #111;
-}
-
-.sb-header-cell{
-  padding:6px 10px;
-  border-right:1px solid #111;
-}
-
-.sb-header-cell:last-child{
-  border-right:none;
-}
-
-.label{
-  font-size:.6rem;
-  color:#777;
-  text-transform:uppercase;
-}
-
-.value{
-  font-size:.9rem;
-}
-
-.sb-grid{
-  display:grid;
-  gap:12px;
-  padding:12px;
-}
-
-.cols-1{
-  grid-template-columns:1fr;
-}
-
-.cols-2{
-  grid-template-columns:1fr 1fr;
-}
-
-.cols-3{
-  grid-template-columns:1fr 1fr 1fr;
-}
-
-.sb-panel{
-  border:1px solid #111;
-  display:flex;
-  flex-direction:column;
-}
-
-.sb-panel-header{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  border-bottom:1px solid #111;
-}
-
-.sb-panel-header div{
-  padding:4px 6px;
-  border-right:1px solid #111;
-}
-
-.sb-panel-header div:last-child{
-  border-right:none;
-}
-
-.ph-label{
-  font-size:.58rem;
-  color:#777;
-  display:block;
-}
-
-.ph-val{
-  font-size:.75rem;
-}
-
-.sb-frame{
-  aspect-ratio:16/9;
-  overflow:hidden;
-  background:white;
-}
-
-.sb-frame img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-.sb-frame.contain img{
-  object-fit:contain;
-}
-
-.sb-placeholder{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:1px dashed #bbb;
-  color:#aaa;
-  font-size:.8rem;
-}
-
-.sb-strip{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  border-top:1px solid #111;
-}
-
-.sb-strip-cell{
-  padding:6px;
-  border-right:1px solid #111;
-}
-
-.sb-strip-cell:last-child{
-  border-right:none;
-}
-
-.sl{
-  font-size:.58rem;
-  text-transform:uppercase;
-  color:#777;
-  display:block;
-  margin-bottom:4px;
-}
-
-.content{
-  white-space:pre-wrap;
-  font-size:.72rem;
-  line-height:1.45;
-}
-
-.sb-notes{
-  border-top:1px solid #111;
-  padding:6px;
-  font-size:.72rem;
-  white-space:pre-wrap;
-}
-
-.page-number{
-  border-top:1px solid #111;
-  padding:8px;
-  text-align:right;
-  font-size:.7rem;
-  color:#666;
-}
-
-/* actions */
-
-.board-actions{
-  max-width:1100px;
-  margin:0 auto 40px;
-  display:none;
-  gap:10px;
-  justify-content:flex-end;
-  flex-wrap:wrap;
-}
-
-/* overlay */
-
-#export-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.5);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:999;
-}
-
-#export-overlay.active{
-  display:flex;
-}
-
-.export-box{
-  background:white;
-  border:1px solid #111;
-  padding:30px;
-}
+*{ box-sizing:border-box; margin:0; padding:0; font-family:"Courier New",monospace!important; font-weight:normal!important; }
+body{ background:#d6d0c4; color:var(--ink); min-height:100vh; padding:32px 16px 48px;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(0,0,0,.04) 27px,rgba(0,0,0,.04) 28px); }
+header{ text-align:center; margin-bottom:32px; }
+header h1{ font-size:2rem; letter-spacing:.12em; text-transform:uppercase; }
+header p{ margin-top:6px; color:#666; font-size:.85rem; }
+.upload-zone{ background:var(--paper); border:2px dashed var(--line); max-width:900px; margin:0 auto 24px; padding:36px; text-align:center; cursor:pointer; position:relative; }
+.upload-zone.drag{ border-color:var(--ink); }
+.upload-zone input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+.upload-zone span{ letter-spacing:.08em; }
+.controls{ max-width:1100px; margin:0 auto 24px; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; background:var(--paper); border:1px solid var(--line); padding:18px; }
+.field{ display:flex; flex-direction:column; gap:4px; }
+.field label{ font-size:.7rem; text-transform:uppercase; color:#666; }
+.field input,.field select{ border:none; border-bottom:1px solid var(--line); background:transparent; padding:4px 2px; outline:none; min-width:110px; }
+button{ cursor:pointer; }
+.btn,.btn-outline{ padding:10px 16px; border:none; text-transform:uppercase; letter-spacing:.08em; }
+.btn{ background:var(--ink); color:white; }
+.btn-outline{ background:transparent; border:1px solid var(--ink); }
+#panel-editor{ max-width:1100px; margin:0 auto 24px; display:none; }
+#panel-editor h2{ margin-bottom:12px; text-transform:uppercase; font-size:.9rem; }
+.pe-list{ display:flex; flex-direction:column; gap:10px; }
+.pe-card{ background:var(--paper); border:1px solid var(--line); display:grid; grid-template-columns:32px 28px 110px 1fr 1fr 1fr 72px; min-height:120px; }
+.pe-drag{ display:flex; align-items:center; justify-content:center; cursor:grab; border-right:1px solid var(--line); color:#999; user-select:none; -webkit-user-select:none; touch-action:none; }
+.pe-num{ display:flex; align-items:center; justify-content:center; border-right:1px solid var(--line); font-size:.7rem; color:#888; }
+.pe-thumb{ width:110px; height:100%; object-fit:cover; border-right:1px solid var(--line); }
+.pe-placeholder{ display:flex; align-items:center; justify-content:center; color:#aaa; border-right:1px solid var(--line); font-size:.75rem; }
+.pe-cell{ padding:8px; display:flex; flex-direction:column; gap:6px; border-right:1px solid var(--line); }
+.pe-cell label{ font-size:.65rem; text-transform:uppercase; color:#777; }
+.pe-cell textarea{ resize:none; border:none; border-bottom:1px solid #ccc; background:transparent; min-height:50px; outline:none; }
+.pe-btns{ display:flex; flex-direction:column; align-items:center; justify-content:space-around; padding:4px; gap:4px; }
+.pe-del,.pe-draw,.pe-copy{ border:none; background:transparent; font-size:.95rem; cursor:pointer; padding:2px 4px; }
+.pe-del{ color:#999; } .pe-del:hover{ color:#c0392b; }
+.pe-draw{ color:#4a9; } .pe-copy{ color:#3498db; }
+#board-wrap{ max-width:1200px; margin:0 auto; display:none; }
+.storyboard-page{ background:white; border:1px solid #999; margin-bottom:40px; }
+.storyboard-page.a4.landscape{ width:1123px; min-height:794px; }
+.storyboard-page.letter.landscape{ width:1056px; min-height:816px; }
+.storyboard-page.a4.portrait{ width:794px; min-height:1123px; }
+.storyboard-page.letter.portrait{ width:816px; min-height:1056px; }
+.sb-header{ display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #111; }
+.sb-header-cell{ padding:6px 10px; border-right:1px solid #111; }
+.sb-header-cell:last-child{ border-right:none; }
+.label{ font-size:.6rem; color:#777; text-transform:uppercase; }
+.value{ font-size:.9rem; }
+.sb-grid{ display:grid; gap:12px; padding:12px; }
+.cols-1{ grid-template-columns:1fr; }
+.cols-2{ grid-template-columns:1fr 1fr; }
+.cols-3{ grid-template-columns:1fr 1fr 1fr; }
+.sb-panel{ border:1px solid #111; display:flex; flex-direction:column; }
+.sb-panel-header{ display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #111; }
+.sb-panel-header div{ padding:4px 6px; border-right:1px solid #111; }
+.sb-panel-header div:last-child{ border-right:none; }
+.ph-label{ font-size:.58rem; color:#777; display:block; }
+.ph-val{ font-size:.75rem; }
+.sb-frame{ aspect-ratio:16/9; overflow:hidden; background:white; position:relative; }
+.sb-frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.sb-frame.contain img{ object-fit:contain; }
+.sb-frame svg.stroke-overlay{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.sb-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; border:1px dashed #bbb; color:#aaa; font-size:.8rem; }
+.sb-strip{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #111; }
+.sb-strip-cell{ padding:6px; border-right:1px solid #111; }
+.sb-strip-cell:last-child{ border-right:none; }
+.sl{ font-size:.58rem; text-transform:uppercase; color:#777; display:block; margin-bottom:4px; }
+.content{ white-space:pre-wrap; font-size:.72rem; line-height:1.45; }
+.sb-notes{ border-top:1px solid #111; padding:6px; font-size:.72rem; white-space:pre-wrap; }
+.page-number{ border-top:1px solid #111; padding:8px; text-align:right; font-size:.7rem; color:#666; }
+.board-actions{ max-width:1100px; margin:0 auto 40px; display:none; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+#export-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:999; }
+#export-overlay.active{ display:flex; }
+.export-box{ background:white; border:1px solid #111; padding:30px; text-align:center; }
+
+/* ═══ DRAW OVERLAY ═══════════════════════════════════ */
+#draw-overlay{ position:fixed; inset:0; background:#1a1a1a; z-index:1000; display:none; flex-direction:column; }
+#draw-overlay.active{ display:flex; }
+#draw-toolbar{ background:#111; border-bottom:1px solid #333; padding:6px 10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex-shrink:0; user-select:none; overflow-x:auto; }
+.dt-group{ display:flex; align-items:center; gap:5px; padding-right:8px; border-right:1px solid #333; flex-shrink:0; }
+.dt-group:last-child{ border-right:none; margin-left:auto; }
+.dt-btn{ background:#222; border:1px solid #444; color:#ccc; padding:4px 8px; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:background .1s; font-family:"Courier New",monospace; white-space:nowrap; }
+.dt-btn:hover{ background:#2e2e2e; color:#fff; }
+.dt-btn.active{ background:#444; color:#fff; border-color:#888; }
+.dt-label{ color:#666; font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+#dt-color-swatch{ width:24px; height:24px; border:2px solid #555; cursor:pointer; flex-shrink:0; position:relative; }
+#dt-color-input{ position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+/* HSL color wheel */
+#dt-wheel-wrap{ position:relative; width:24px; height:24px; cursor:pointer; flex-shrink:0; }
+#dt-wheel-canvas{ border-radius:50%; width:24px; height:24px; display:block; border:2px solid #555; }
+.dt-recent-dot{ width:18px; height:18px; border:1px solid #444; cursor:pointer; flex-shrink:0; border-radius:2px; }
+.dt-recent-dot:hover{ outline:2px solid #888; }
+#dt-stroke-range{ width:60px; cursor:pointer; accent-color:#888; }
+.dt-stroke-preview{ width:32px; height:18px; display:flex; align-items:center; justify-content:center; }
+#dt-opacity-range{ width:55px; cursor:pointer; accent-color:#888; }
+#dt-stab-range{ width:55px; cursor:pointer; accent-color:#3af; }
+#dt-stab-val{ color:#3af; font-size:.65rem; min-width:28px; }
+#draw-canvas-wrap{ flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:16px; position:relative; background:#222; }
+#draw-stage{ position:relative; background:#fff; flex-shrink:0; box-shadow:0 4px 32px rgba(0,0,0,.5); }
+#draw-bg-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; display:block; }
+#draw-svg{ position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
+.sel-handle{ fill:#fff; stroke:#0af; stroke-width:1.5; cursor:pointer; }
+.sel-box{ fill:none; stroke:#0af; stroke-width:1; stroke-dasharray:4 3; pointer-events:none; }
+.lasso-preview{ fill:rgba(0,160,255,.08); stroke:#0af; stroke-width:1; stroke-dasharray:5 3; pointer-events:none; }
+/* Bezier pen control point styles */
+.cp-line{ stroke:#0af; stroke-width:1; stroke-dasharray:3 2; pointer-events:none; }
+.cp-anchor{ fill:#fff; stroke:#0af; stroke-width:1.5; cursor:move; }
+.cp-handle{ fill:#0af; stroke:#0af; stroke-width:1; cursor:move; }
+#draw-mode-pill{ position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.75); color:#fff; font-size:.65rem; padding:3px 12px; letter-spacing:.08em; text-transform:uppercase; pointer-events:none; border-radius:20px; }
+#draw-panel-nav{ background:#111; border-top:1px solid #333; padding:5px 10px; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+#draw-panel-strip{ display:flex; gap:5px; overflow-x:auto; flex:1; }
+.dpn-thumb{ width:60px; height:34px; object-fit:cover; border:2px solid #333; cursor:pointer; flex-shrink:0; background:#222; }
+.dpn-thumb.active{ border-color:#0af; }
+.dpn-empty{ width:60px; height:34px; border:2px solid #333; cursor:pointer; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:.58rem; color:#555; }
+.dpn-empty.active{ border-color:#0af; }
+/* Color wheel popup */
+#colorwheel-popup{ position:fixed; z-index:2000; display:none; background:#1a1a1a; border:1px solid #444; padding:10px; border-radius:6px; box-shadow:0 8px 32px rgba(0,0,0,.6); }
+#colorwheel-popup.active{ display:block; }
+#cw-canvas{ border-radius:50%; cursor:crosshair; display:block; }
+#cw-brightness{ width:180px; margin-top:8px; accent-color:#888; }
+#cw-hex{ background:#222; border:1px solid #444; color:#eee; padding:3px 6px; font-size:.75rem; width:80px; margin-top:6px; outline:none; font-family:"Courier New",monospace; }
+#cw-preview{ width:24px; height:24px; border:2px solid #555; display:inline-block; vertical-align:middle; margin-left:6px; }
+#cw-close{ float:right; background:transparent; border:none; color:#888; font-size:.8rem; cursor:pointer; padding:0; }
 
 @media print{
-
-  body{
-    background:white;
-    padding:0;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-
-  header,
-  .upload-zone,
-  .controls,
-  #panel-editor,
-  .board-actions{
-    display:none !important;
-  }
-
-  #board-wrap{
-    display:block !important;
-    max-width:none !important;
-  }
-
-  .storyboard-page{
-    border:none !important;
-    margin:0 !important;
-    page-break-after:always;
-    break-after:page;
-    page-break-inside:avoid;
-    break-inside:avoid;
-  }
-
-  .sb-panel{
-    page-break-inside:avoid;
-    break-inside:avoid;
-  }
-
-  @page{
-    size:auto;
-    margin:8mm;
-  }
-
-  /* Hide browser print header/footer (date, URL, page number) */
+  body{ background:white; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  header,.upload-zone,.controls,#panel-editor,.board-actions{ display:none!important; }
+  #board-wrap{ display:block!important; max-width:none!important; }
+  .storyboard-page{ border:none!important; margin:0!important; page-break-after:always; break-after:page; page-break-inside:avoid; break-inside:avoid; }
+  .sb-panel{ page-break-inside:avoid; break-inside:avoid; }
+  @page{ size:auto; margin:8mm; }
   @page :first{ margin-top:8mm; }
 }
 </style>
@@ -502,7 +147,7 @@ button{
 
 <header>
   <h1>Storyboard Formatter</h1>
-  <p>Upload images • write notes • export PNG / PDF</p>
+  <p>Upload images • draw • export PNG / PDF</p>
 </header>
 
 <div class="upload-zone" id="dropzone">
@@ -511,67 +156,38 @@ button{
 </div>
 
 <div class="controls">
-
-  <div class="field">
-    <label>Project</label>
-    <input type="text" id="projTitle" value="Untitled Project">
-  </div>
-
-  <div class="field">
-    <label>Scene</label>
-    <input type="text" id="sceneNum" value="001">
-  </div>
-
-  <div class="field">
-    <label>Columns</label>
+  <div class="field"><label>Project</label><input type="text" id="projTitle" value="Untitled Project"></div>
+  <div class="field"><label>Author</label><input type="text" id="projAuthor" value=""></div>
+  <div class="field"><label>Scene</label><input type="text" id="sceneNum" value="001"></div>
+  <div class="field"><label>Columns</label>
     <select id="colCount">
       <option value="1">1</option>
       <option value="2" selected>2</option>
       <option value="3">3</option>
     </select>
   </div>
-
-  <div class="field">
-    <label>Image Fit</label>
+  <div class="field"><label>Image Fit</label>
     <select id="imgFit">
       <option value="">Cover</option>
       <option value="contain">Contain</option>
     </select>
   </div>
-
-  <div class="field">
-    <label>Page Size</label>
+  <div class="field"><label>Page Size</label>
     <select id="pageSize">
       <option value="a4">A4</option>
       <option value="letter">Letter</option>
     </select>
   </div>
-
-  <div class="field">
-    <label>Orientation</label>
+  <div class="field"><label>Orientation</label>
     <select id="orientation">
       <option value="landscape">Landscape</option>
       <option value="portrait">Portrait</option>
     </select>
   </div>
-
-  <button class="btn-outline" id="addEmptyPanelBtn">
-    + Empty Panel
-  </button>
-
-  <button class="btn-outline" id="saveStoryboardBtn">
-    Save .storyboard
-  </button>
-
-  <label class="btn-outline" style="display:flex;align-items:center;">
-    Load .storyboard
-    <input type="file" id="loadStoryboardInput" hidden>
-  </label>
-
-  <button class="btn" id="generateBtn" disabled>
-    Generate Board
-  </button>
-
+  <button class="btn-outline" id="addEmptyPanelBtn">+ Empty Panel</button>
+  <button class="btn-outline" id="saveStoryboardBtn">Save .storyboard</button>
+  <label class="btn-outline" style="display:flex;align-items:center;">Load .storyboard<input type="file" id="loadStoryboardInput" hidden></label>
+  <button class="btn" id="generateBtn" disabled>Generate Board</button>
 </div>
 
 <div id="panel-editor">
@@ -582,257 +198,279 @@ button{
 <div id="board-wrap"></div>
 
 <div class="board-actions" id="board-actions">
-
-  <button class="btn-outline" id="regenBtn">
-    Refresh
-  </button>
-
-  <button class="btn-outline" id="exportPngBtn">
-    Export PNG
-  </button>
-
-  <button class="btn" id="exportPdfBtn">
-    Export PDF
-  </button>
-
+  <button class="btn-outline" id="regenBtn">Refresh</button>
+  <button class="btn-outline" id="exportPngBtn">Export PNG</button>
+  <button class="btn-outline" id="exportPdfCompBtn">PDF (Compressed)</button>
+  <button class="btn" id="exportPdfBtn">PDF (Full Quality)</button>
 </div>
 
 <div id="export-overlay">
-  <div class="export-box">
-    Rendering storyboard...
+  <div class="export-box" id="export-box-msg">Rendering storyboard...</div>
+</div>
+
+<!-- COLOR WHEEL POPUP -->
+<div id="colorwheel-popup">
+  <button id="cw-close">✕ close</button>
+  <div style="clear:both;margin-top:4px;">
+    <canvas id="cw-canvas" width="180" height="180"></canvas>
+    <br>
+    <input type="range" id="cw-brightness" min="0" max="100" value="100" title="Brightness">
+    <br>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+      <input type="text" id="cw-hex" value="#e74c3c" maxlength="7">
+      <div id="cw-preview"></div>
+      <button class="dt-btn" id="cw-apply" style="padding:3px 8px;">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAW OVERLAY -->
+<div id="draw-overlay">
+  <div id="draw-toolbar">
+
+    <!-- Tools -->
+    <div class="dt-group">
+      <span class="dt-label">Tool</span>
+      <button class="dt-btn active" data-tool="pen">✏ Pen</button>
+      <button class="dt-btn" data-tool="bezier">✒ Bezier</button>
+      <button class="dt-btn" data-tool="line">╱ Line</button>
+      <button class="dt-btn" data-tool="rect">▭ Rect</button>
+      <button class="dt-btn" data-tool="ellipse">◯ Ellipse</button>
+      <button class="dt-btn" data-tool="arrow">→ Arrow</button>
+      <button class="dt-btn" data-tool="lasso">⌀ Lasso</button>
+      <button class="dt-btn" data-tool="select">↖ Select</button>
+    </div>
+
+    <!-- Stabilizer -->
+    <div class="dt-group">
+      <span class="dt-label" style="color:#3af;">Stab</span>
+      <input type="range" id="dt-stab-range" min="0" max="20" value="0" title="Stabilizer (0=off, 20=max)">
+      <span id="dt-stab-val">0</span>
+    </div>
+
+    <!-- Color -->
+    <div class="dt-group">
+      <span class="dt-label">Color</span>
+      <div id="dt-color-swatch" title="Pick color (click for wheel)">
+        <input type="color" id="dt-color-input" value="#e74c3c">
+      </div>
+      <div id="dt-wheel-wrap" title="Color wheel">
+        <canvas id="dt-wheel-canvas" width="24" height="24"></canvas>
+      </div>
+      <div id="dt-recent-colors" style="display:flex;gap:3px;"></div>
+    </div>
+
+    <!-- Stroke width -->
+    <div class="dt-group">
+      <span class="dt-label">Width</span>
+      <input type="range" id="dt-stroke-range" min="1" max="24" value="3">
+      <div class="dt-stroke-preview"><svg width="32" height="18" id="dt-stroke-svg"><line x1="2" y1="9" x2="30" y2="9" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/></svg></div>
+    </div>
+
+    <!-- Opacity -->
+    <div class="dt-group">
+      <span class="dt-label">Opacity</span>
+      <input type="range" id="dt-opacity-range" min="10" max="100" value="100">
+      <span id="dt-opacity-val" style="color:#888;font-size:.65rem;min-width:28px;">100%</span>
+    </div>
+
+    <!-- Fill -->
+    <div class="dt-group">
+      <span class="dt-label">Fill</span>
+      <button class="dt-btn" id="dt-fill-btn" data-fill="none">None</button>
+      <div id="dt-fill-swatch" style="width:22px;height:22px;border:2px solid #444;cursor:pointer;flex-shrink:0;position:relative;background:#e74c3c;display:none;">
+        <input type="color" id="dt-fill-input" value="#e74c3c" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+      </div>
+    </div>
+
+    <!-- Edit actions -->
+    <div class="dt-group">
+      <button class="dt-btn" id="dt-copy-btn">⎘ Copy</button>
+      <button class="dt-btn" id="dt-paste-btn">⎗ Paste</button>
+      <button class="dt-btn" id="dt-undo-btn">↩ Undo</button>
+      <button class="dt-btn" id="dt-redo-btn">↪ Redo</button>
+      <button class="dt-btn" id="dt-delete-btn">🗑 Del</button>
+      <button class="dt-btn" id="dt-clear-btn">✕ Clear</button>
+    </div>
+
+    <!-- Bezier controls (shown when bezier tool active) -->
+    <div class="dt-group" id="dt-bezier-group" style="display:none;">
+      <button class="dt-btn" id="dt-bezier-close-btn">Close Path</button>
+      <button class="dt-btn" id="dt-bezier-finish-btn">✓ Finish</button>
+    </div>
+
+    <!-- Done/cancel -->
+    <div class="dt-group">
+      <button class="dt-btn" id="dt-done-btn" style="background:#1a6e3c;border-color:#2ea55c;color:#fff;">✓ Done</button>
+      <button class="dt-btn" id="dt-cancel-btn">✕ Cancel</button>
+    </div>
+  </div>
+
+  <div id="draw-canvas-wrap">
+    <div id="draw-stage">
+      <img id="draw-bg-img" src="" alt="">
+      <svg id="draw-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="draw-mode-pill">Pen — draw freely</div>
+  </div>
+
+  <div id="draw-panel-nav">
+    <span class="dt-label" style="white-space:nowrap;">Panels:</span>
+    <div id="draw-panel-strip"></div>
   </div>
 </div>
 
 <script>
+'use strict';
 
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const generateBtn = document.getElementById('generateBtn');
-const boardWrap = document.getElementById('board-wrap');
+/* ═══════════════════════════════════════════════════
+   GLOBALS
+═══════════════════════════════════════════════════ */
+const dropzone     = document.getElementById('dropzone');
+const fileInput    = document.getElementById('fileInput');
+const generateBtn  = document.getElementById('generateBtn');
+const boardWrap    = document.getElementById('board-wrap');
 const boardActions = document.getElementById('board-actions');
-const panelEditor = document.getElementById('panel-editor');
-const peList = document.getElementById('pe-list');
-const exportOverlay = document.getElementById('export-overlay');
+const panelEditor  = document.getElementById('panel-editor');
+const peList       = document.getElementById('pe-list');
+const exportOverlay= document.getElementById('export-overlay');
+const exportBox    = document.getElementById('export-box-msg');
 
 let panels = [];
 
-/* shot type labels */
 const shotLabels = {
-  WS:"Wide Shot",
-  LS:"Long Shot",
-  MS:"Medium Shot",
-  MCU:"Medium Close-Up",
-  CU:"Close-Up",
-  ECU:"Extreme Close-Up",
-  OTS:"Over Shoulder",
-  POV:"Point Of View",
-  "2S":"Two Shot",
-  INSERT:"Insert",
-  DUTCH:"Dutch Angle"
+  WS:'Wide Shot', LS:'Long Shot', MS:'Medium Shot', MCU:'Medium Close-Up',
+  CU:'Close-Up', ECU:'Extreme Close-Up', OTS:'Over Shoulder',
+  POV:'Point Of View', '2S':'Two Shot', INSERT:'Insert', DUTCH:'Dutch Angle'
 };
 
-/* upload */
-
-dropzone.addEventListener('dragover', e=>{
-  e.preventDefault();
-  dropzone.classList.add('drag');
-});
-
-dropzone.addEventListener('dragleave', ()=>{
-  dropzone.classList.remove('drag');
-});
-
-dropzone.addEventListener('drop', e=>{
-  e.preventDefault();
-  dropzone.classList.remove('drag');
-
-  addFiles(
-    [...e.dataTransfer.files]
-    .filter(f=>f.type.startsWith('image/'))
-  );
-});
-
-fileInput.addEventListener('change', ()=>{
-  addFiles([...fileInput.files]);
-  fileInput.value='';
-});
+/* ═══════════════════════════════════════════════════
+   UPLOAD
+═══════════════════════════════════════════════════ */
+dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{ e.preventDefault(); dropzone.classList.remove('drag'); addFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))); });
+fileInput.addEventListener('change', ()=>{ addFiles([...fileInput.files]); fileInput.value=''; });
 
 async function addFiles(files){
-
   for(const file of files){
-
     const dataUrl = await fileToDataURL(file);
-
-    panels.push({
-      dataUrl,
-      action:'',
-      dialogue:'',
-      notes:'',
-      shotType:'WS'
-    });
+    panels.push({ dataUrl, action:'', dialogue:'', notes:'', shotType:'WS', strokes:[] });
   }
-
   rebuildEditor();
   updateUploadLabel();
-
   generateBtn.disabled = panels.length===0;
-
   autoSaveLocal();
 }
 
-/* empty panel */
-
-document.getElementById('addEmptyPanelBtn')
-.addEventListener('click', ()=>{
-
-  panels.push({
-    dataUrl:'',
-    action:'',
-    dialogue:'',
-    notes:'',
-    shotType:'WS'
-  });
-
+document.getElementById('addEmptyPanelBtn').addEventListener('click', ()=>{
+  panels.push({ dataUrl:'', action:'', dialogue:'', notes:'', shotType:'WS', strokes:[] });
   rebuildEditor();
-
   generateBtn.disabled = false;
-
   autoSaveLocal();
 });
 
-/* editor */
+/* ═══════════════════════════════════════════════════
+   PANEL EDITOR
+═══════════════════════════════════════════════════ */
+function panelIsEmpty(p){
+  return !p.dataUrl && (!p.strokes || p.strokes.length===0);
+}
 
 function rebuildEditor(){
-
-  if(!panels.length){
-    panelEditor.style.display='none';
-    return;
-  }
-
+  if(!panels.length){ panelEditor.style.display='none'; return; }
   panelEditor.style.display='block';
-
   peList.innerHTML='';
 
   panels.forEach((p,i)=>{
-
     const card = document.createElement('div');
-
     card.className='pe-card';
+    const strokeCount = p.strokes ? p.strokes.length : 0;
+    const drawColor = strokeCount ? '#2ecc71' : '#4a9';
 
     card.innerHTML=`
-
       <div class="pe-drag">☰</div>
-
-      <div class="pe-num">
-        ${String(i+1).padStart(3,'0')}
-      </div>
-
-      ${
-        p.dataUrl
+      <div class="pe-num">${String(i+1).padStart(3,'0')}</div>
+      ${p.dataUrl
         ? `<img class="pe-thumb" src="${p.dataUrl}">`
-        : `<div class="pe-placeholder">EMPTY</div>`
-      }
-
+        : `<div class="pe-placeholder">${strokeCount?'DRAWN':'EMPTY'}</div>`}
       <div class="pe-cell">
-
         <label>Shot Type</label>
-
         <select data-field="shotType" data-idx="${i}">
-          <option value="WS" ${p.shotType==='WS'?'selected':''}>WS (Wide Shot - full scene / full body)</option>
-          <option value="LS" ${p.shotType==='LS'?'selected':''}>LS (Long Shot - character in environment)</option>
-          <option value="MS" ${p.shotType==='MS'?'selected':''}>MS (Medium Shot - waist up)</option>
-          <option value="MCU" ${p.shotType==='MCU'?'selected':''}>MCU (Medium Close-Up - chest up)</option>
-          <option value="CU" ${p.shotType==='CU'?'selected':''}>CU (Close-Up - face / detail)</option>
-          <option value="ECU" ${p.shotType==='ECU'?'selected':''}>ECU (Extreme Close-Up - extreme detail)</option>
-          <option value="OTS" ${p.shotType==='OTS'?'selected':''}>OTS (Over Shoulder - looking past character)</option>
-          <option value="POV" ${p.shotType==='POV'?'selected':''}>POV (Point of View - from character eyes)</option>
-          <option value="2S" ${p.shotType==='2S'?'selected':''}>2S (Two Shot - two characters)</option>
-          <option value="INSERT" ${p.shotType==='INSERT'?'selected':''}>INSERT (object detail shot)</option>
-          <option value="DUTCH" ${p.shotType==='DUTCH'?'selected':''}>DUTCH (tilted angle shot)</option>
+          <option value="WS" ${p.shotType==='WS'?'selected':''}>WS — Wide Shot</option>
+          <option value="LS" ${p.shotType==='LS'?'selected':''}>LS — Long Shot</option>
+          <option value="MS" ${p.shotType==='MS'?'selected':''}>MS — Medium Shot</option>
+          <option value="MCU" ${p.shotType==='MCU'?'selected':''}>MCU — Medium Close-Up</option>
+          <option value="CU" ${p.shotType==='CU'?'selected':''}>CU — Close-Up</option>
+          <option value="ECU" ${p.shotType==='ECU'?'selected':''}>ECU — Extreme Close-Up</option>
+          <option value="OTS" ${p.shotType==='OTS'?'selected':''}>OTS — Over Shoulder</option>
+          <option value="POV" ${p.shotType==='POV'?'selected':''}>POV — Point of View</option>
+          <option value="2S" ${p.shotType==='2S'?'selected':''}>2S — Two Shot</option>
+          <option value="INSERT" ${p.shotType==='INSERT'?'selected':''}>INSERT — Object Detail</option>
+          <option value="DUTCH" ${p.shotType==='DUTCH'?'selected':''}>DUTCH — Tilted Angle</option>
         </select>
-
         <label>Action</label>
-
-        <textarea
-        data-field="action"
-        data-idx="${i}"
-        >${esc(p.action)}</textarea>
-
+        <textarea data-field="action" data-idx="${i}">${esc(p.action)}</textarea>
       </div>
-
       <div class="pe-cell">
-
         <label>Dialogue</label>
-
-        <textarea
-        data-field="dialogue"
-        data-idx="${i}"
-        >${esc(p.dialogue)}</textarea>
-
+        <textarea data-field="dialogue" data-idx="${i}">${esc(p.dialogue)}</textarea>
       </div>
-
       <div class="pe-cell">
-
         <label>Notes</label>
-
-        <textarea
-        data-field="notes"
-        data-idx="${i}"
-        >${esc(p.notes)}</textarea>
-
+        <textarea data-field="notes" data-idx="${i}">${esc(p.notes)}</textarea>
       </div>
-
-      <button class="pe-del" data-idx="${i}">
-        ✕
-      </button>
+      <div class="pe-btns">
+        <button class="pe-draw" data-idx="${i}" title="Draw (${strokeCount} strokes)" style="color:${drawColor}">✏${strokeCount?'<sup style=font-size:.5rem>'+strokeCount+'</sup>':''}</button>
+        <button class="pe-copy" data-idx="${i}" title="Duplicate panel">⎘</button>
+        <button class="pe-del"  data-idx="${i}" title="Delete panel">✕</button>
+      </div>
     `;
-
     peList.appendChild(card);
   });
 
-  peList.querySelectorAll('textarea, select')
-  .forEach(el=>{
-
+  peList.querySelectorAll('textarea,select').forEach(el=>{
     el.addEventListener('input', ()=>{
-
-      const idx = +el.dataset.idx;
-      const field = el.dataset.field;
-
-      panels[idx][field] = el.value;
-
+      panels[+el.dataset.idx][el.dataset.field] = el.value;
       autoSaveLocal();
     });
   });
 
-  peList.querySelectorAll('.pe-del')
-  .forEach(btn=>{
-
+  peList.querySelectorAll('.pe-del').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-
       panels.splice(+btn.dataset.idx,1);
-
       rebuildEditor();
-
       generateBtn.disabled = panels.length===0;
-
       updateUploadLabel();
-
       clearBoard();
-
       autoSaveLocal();
     });
   });
 
-  // Drag-to-reorder
+  peList.querySelectorAll('.pe-draw').forEach(btn=>{
+    btn.addEventListener('click', ()=> openDrawOverlay(+btn.dataset.idx));
+  });
+
+  peList.querySelectorAll('.pe-copy').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = +btn.dataset.idx;
+      const clone = JSON.parse(JSON.stringify(panels[idx]));
+      panels.splice(idx+1, 0, clone);
+      rebuildEditor();
+      generateBtn.disabled = false;
+      updateUploadLabel();
+      clearBoard();
+      autoSaveLocal();
+    });
+  });
+
   initDrag();
 }
 
-/* drag-to-reorder panels */
-
+/* ═══════════════════════════════════════════════════
+   DRAG REORDER
+═══════════════════════════════════════════════════ */
 function initDrag(){
-  let dragSrc = null;
-  let placeholder = null;
-
   peList.querySelectorAll('.pe-drag').forEach(handle=>{
     handle.addEventListener('mousedown', onDragStart);
     handle.addEventListener('touchstart', onDragStart, {passive:false});
@@ -840,355 +478,259 @@ function initDrag(){
 
   function onDragStart(e){
     e.preventDefault();
-
     const card = e.currentTarget.closest('.pe-card');
-    dragSrc = card;
-
     const cards = [...peList.querySelectorAll('.pe-card')];
     const idx = cards.indexOf(card);
     const rect = card.getBoundingClientRect();
-
-    // Ghost element
     const ghost = card.cloneNode(true);
-    ghost.id = 'drag-ghost';
-    ghost.style.cssText = `
-      position:fixed;
-      pointer-events:none;
-      z-index:9999;
-      width:${rect.width}px;
-      opacity:0.85;
-      box-shadow:0 4px 20px rgba(0,0,0,0.25);
-      top:${rect.top}px;
-      left:${rect.left}px;
-    `;
+    ghost.style.cssText=`position:fixed;pointer-events:none;z-index:9999;width:${rect.width}px;opacity:.85;box-shadow:0 4px 20px rgba(0,0,0,.25);top:${rect.top}px;left:${rect.left}px;`;
     document.body.appendChild(ghost);
-
-    // Placeholder
-    placeholder = document.createElement('div');
-    placeholder.style.cssText = `
-      height:${rect.height}px;
-      border:2px dashed var(--line);
-      background:rgba(0,0,0,0.03);
-      margin-bottom:0;
-    `;
-
+    const placeholder = document.createElement('div');
+    placeholder.style.cssText=`height:${rect.height}px;border:2px dashed var(--line);background:rgba(0,0,0,.03);`;
     card.replaceWith(placeholder);
-
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let offsetY = clientY - rect.top;
+    const offsetY = clientY - rect.top;
 
     function onMove(e){
       const cy = e.touches ? e.touches[0].clientY : e.clientY;
-      ghost.style.top = (cy - offsetY) + 'px';
-
-      // Find which card we're hovering over
-      const allCards = [...peList.querySelectorAll('.pe-card, #drag-placeholder')];
-      let target = null;
-      let insertBefore = true;
-
+      ghost.style.top=(cy-offsetY)+'px';
+      let target=null, insertBefore=true;
       for(const c of peList.children){
-        if(c === placeholder) continue;
-        const r = c.getBoundingClientRect();
-        const mid = r.top + r.height / 2;
-        if(cy < mid){
-          target = c;
-          insertBefore = true;
-          break;
-        }
-        target = c;
-        insertBefore = false;
+        if(c===placeholder) continue;
+        const r=c.getBoundingClientRect();
+        if(cy < r.top+r.height/2){ target=c; insertBefore=true; break; }
+        target=c; insertBefore=false;
       }
-
-      if(target){
-        if(insertBefore){
-          peList.insertBefore(placeholder, target);
-        } else {
-          target.after(placeholder);
-        }
-      } else {
-        peList.appendChild(placeholder);
-      }
+      if(target){ insertBefore ? peList.insertBefore(placeholder,target) : target.after(placeholder); }
+      else peList.appendChild(placeholder);
     }
 
     function onUp(){
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('touchend', onUp);
-
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      document.removeEventListener('touchmove',onMove);
+      document.removeEventListener('touchend',onUp);
       ghost.remove();
-
-      // Figure out new order from DOM
-      const newOrder = [];
+      const newOrder=[];
       peList.querySelectorAll('.pe-card').forEach(c=>{
         newOrder.push(panels[+c.querySelector('[data-idx]').dataset.idx]);
       });
-
-      // Insert dragged panel at placeholder position
-      const phIdx = [...peList.children].indexOf(placeholder);
-      newOrder.splice(phIdx, 0, panels[idx]);
-
-      panels = newOrder;
-      rebuildEditor();
-      clearBoard();
-      autoSaveLocal();
+      const phIdx=[...peList.children].indexOf(placeholder);
+      newOrder.splice(phIdx,0,panels[idx]);
+      panels=newOrder;
+      rebuildEditor(); clearBoard(); autoSaveLocal();
     }
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('touchmove', onMove, {passive:false});
-    document.addEventListener('touchend', onUp);
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    document.addEventListener('touchmove',onMove,{passive:false});
+    document.addEventListener('touchend',onUp);
   }
 }
 
-/* generate */
-
+/* ═══════════════════════════════════════════════════
+   GENERATE BOARD
+═══════════════════════════════════════════════════ */
 generateBtn.addEventListener('click', generateBoard);
-
-document.getElementById('regenBtn')
-.addEventListener('click', generateBoard);
+document.getElementById('regenBtn').addEventListener('click', generateBoard);
 
 function generateBoard(){
-
-  const title =
-  document.getElementById('projTitle').value
-  || 'Untitled';
-
-  const scene =
-  document.getElementById('sceneNum').value
-  || '001';
-
-  const cols =
-  parseInt(document.getElementById('colCount').value);
-
-  const fit =
-  document.getElementById('imgFit').value;
-
-  const pageSize =
-  document.getElementById('pageSize').value;
-
-  const orientation =
-  document.getElementById('orientation').value;
+  const title  = document.getElementById('projTitle').value || 'Untitled';
+  const author = document.getElementById('projAuthor').value || '';
+  const scene  = document.getElementById('sceneNum').value  || '001';
+  const cols   = parseInt(document.getElementById('colCount').value);
+  const fit    = document.getElementById('imgFit').value;
+  const pageSize    = document.getElementById('pageSize').value;
+  const orientation = document.getElementById('orientation').value;
 
   boardWrap.innerHTML='';
   boardWrap.style.display='block';
   boardActions.style.display='flex';
 
-  // Work out how many panels fit per page
-  // Portrait pages fit fewer rows than landscape
-  const rowsPerPage = (orientation==='portrait') ? 2 : 2;
-  const panelsPerPage = cols * rowsPerPage;
-
+  const panelsPerPage = cols * 2;
   const totalPages = Math.ceil(panels.length / panelsPerPage);
 
   for(let pg=0; pg<totalPages; pg++){
-
     const page = document.createElement('div');
-    page.className = `storyboard-page ${pageSize} ${orientation}`;
+    page.className=`storyboard-page ${pageSize} ${orientation}`;
     if(pg===0) page.id='sb-page';
 
-    const pageHeaderHTML = `
-      <div class="sb-header">
-        <div class="sb-header-cell">
-          <span class="label">Project</span>
-          <span class="value">${esc(title)}</span>
-        </div>
-        <div class="sb-header-cell">
-          <span class="label">Scene</span>
-          <span class="value">${esc(scene)}</span>
-        </div>
-      </div>
-    `;
-
-    page.innerHTML = pageHeaderHTML;
+    // header
+    const hdr = document.createElement('div');
+    hdr.className='sb-header';
+    hdr.innerHTML=`
+      <div class="sb-header-cell"><span class="label">Project</span><span class="value">${esc(title)}</span></div>
+      <div class="sb-header-cell"><span class="label">Author</span><span class="value">${esc(author)}</span></div>
+      <div class="sb-header-cell"><span class="label">Scene</span><span class="value">${esc(scene)}</span></div>`;
+    page.appendChild(hdr);
 
     const grid = document.createElement('div');
-    grid.className = `sb-grid cols-${cols}`;
+    grid.className=`sb-grid cols-${cols}`;
 
-    const start = pg * panelsPerPage;
-    const end = Math.min(start + panelsPerPage, panels.length);
+    const start=pg*panelsPerPage, end=Math.min(start+panelsPerPage,panels.length);
+    for(let i=start;i<end;i++){
+      const p=panels[i];
+      const num=String(i+1).padStart(3,'0');
+      const isEmpty=panelIsEmpty(p);
 
-    for(let i=start; i<end; i++){
-      const p = panels[i];
-      const num = String(i+1).padStart(3,'0');
-
-      const panel = document.createElement('div');
+      const panel=document.createElement('div');
       panel.className='sb-panel';
 
-      panel.innerHTML=`
-        <div class="sb-panel-header">
-          <div>
-            <span class="ph-label">Scene</span>
-            <span class="ph-val">${esc(scene)}</span>
-          </div>
-          <div>
-            <span class="ph-label">Panel</span>
-            <span class="ph-val">${num}</span>
-          </div>
-          <div>
-            <span class="ph-label">Shot</span>
-            <span class="ph-val">${shotLabels[p.shotType] || p.shotType}</span>
-          </div>
-        </div>
+      // frame
+      const frame=document.createElement('div');
+      frame.className='sb-frame'+(fit==='contain'?' contain':'');
 
-        <div class="sb-frame ${fit==='contain'?'contain':''}">
-          ${
-            p.dataUrl
-            ? `<img src="${p.dataUrl}">`
-            : `<div class="sb-placeholder">EMPTY PANEL</div>`
-          }
-        </div>
+      if(p.dataUrl){
+        const img=document.createElement('img');
+        img.src=p.dataUrl;
+        frame.appendChild(img);
+      } else if(!isEmpty){
+        // has strokes but no image — white background already from CSS
+      } else {
+        const ph=document.createElement('div');
+        ph.className='sb-placeholder';
+        ph.textContent='EMPTY PANEL';
+        frame.appendChild(ph);
+      }
 
-        <div class="sb-strip">
-          <div class="sb-strip-cell">
-            <span class="sl">Action</span>
-            <div class="content">${esc(p.action || '—')}</div>
-          </div>
-          <div class="sb-strip-cell">
-            <span class="sl">Dialogue</span>
-            <div class="content">${esc(p.dialogue || '—')}</div>
-          </div>
-        </div>
+      // stroke overlay SVG — inline so html2canvas picks it up
+      if(p.strokes && p.strokes.length>0){
+        const svgEl=buildStrokesSVGElement(p.strokes);
+        frame.appendChild(svgEl);
+      }
 
-        <div class="sb-notes">${esc(p.notes || '—')}</div>
-      `;
+      const phdr=document.createElement('div');
+      phdr.className='sb-panel-header';
+      phdr.innerHTML=`
+        <div><span class="ph-label">Scene</span><span class="ph-val">${esc(scene)}</span></div>
+        <div><span class="ph-label">Panel</span><span class="ph-val">${num}</span></div>
+        <div><span class="ph-label">Shot</span><span class="ph-val">${shotLabels[p.shotType]||p.shotType}</span></div>`;
+
+      panel.appendChild(phdr);
+      panel.appendChild(frame);
+
+      const strip=document.createElement('div');
+      strip.className='sb-strip';
+      strip.innerHTML=`
+        <div class="sb-strip-cell"><span class="sl">Action</span><div class="content">${esc(p.action||'—')}</div></div>
+        <div class="sb-strip-cell"><span class="sl">Dialogue</span><div class="content">${esc(p.dialogue||'—')}</div></div>`;
+      panel.appendChild(strip);
+
+      const notes=document.createElement('div');
+      notes.className='sb-notes';
+      notes.textContent=p.notes||'—';
+      panel.appendChild(notes);
 
       grid.appendChild(panel);
     }
 
     page.appendChild(grid);
-
-    page.innerHTML += `
-      <div class="page-number">
-        ${pg+1} / ${totalPages}
-      </div>
-    `;
+    const pn=document.createElement('div');
+    pn.className='page-number';
+    pn.textContent=`${pg+1} / ${totalPages}`;
+    page.appendChild(pn);
 
     boardWrap.appendChild(page);
   }
-
   autoSaveLocal();
 }
 
-/* png export */
+/* build SVG element for stroke overlay — DOM node, not string */
+function buildStrokesSVGElement(strokes){
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('viewBox','0 0 1600 900');
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.classList.add('stroke-overlay');
+  strokes.forEach(s=>{
+    const els=makeSVGEls(s,ns);
+    els.forEach(el=>svg.appendChild(el));
+  });
+  return svg;
+}
 
-document.getElementById('exportPngBtn')
-.addEventListener('click', async ()=>{
-
-  const pages = boardWrap.querySelectorAll('.storyboard-page');
-
-  if(!pages.length){
-    alert('Generate board first');
-    return;
-  }
-
+/* ═══════════════════════════════════════════════════
+   EXPORT — PNG
+═══════════════════════════════════════════════════ */
+document.getElementById('exportPngBtn').addEventListener('click', async ()=>{
+  const pages=boardWrap.querySelectorAll('.storyboard-page');
+  if(!pages.length){ alert('Generate board first'); return; }
   exportOverlay.classList.add('active');
-  document.querySelector('.export-box').textContent = 'Rendering PNG…';
-
+  exportBox.textContent='Rendering PNG…';
   try{
-    // If one page, export as single PNG; else zip not available, export first page
-    const page = pages[0];
-    const canvas = await html2canvas(page,{
-      scale:3,
-      backgroundColor:'#fff',
-      useCORS:true,
-      logging:false
-    });
-
-    const a = document.createElement('a');
+    const canvas=await html2canvas(pages[0],{scale:3,backgroundColor:'#fff',useCORS:true,logging:false});
+    const a=document.createElement('a');
     a.download='storyboard.png';
-    a.href = canvas.toDataURL('image/png',1);
+    a.href=canvas.toDataURL('image/png',1);
     a.click();
-  }catch(e){
-    alert('Export failed: '+e.message);
-  }
-
+  }catch(e){ alert('Export failed: '+e.message); }
   exportOverlay.classList.remove('active');
 });
 
-/* PDF export — renders each page via html2canvas, assembles with jsPDF */
+/* ═══════════════════════════════════════════════════
+   EXPORT — PDF (shared core)
+═══════════════════════════════════════════════════ */
+document.getElementById('exportPdfBtn').addEventListener('click',     ()=>exportPDF(false));
+document.getElementById('exportPdfCompBtn').addEventListener('click', ()=>exportPDF(true));
 
-document.getElementById('exportPdfBtn')
-.addEventListener('click', async ()=>{
-
-  const pages = boardWrap.querySelectorAll('.storyboard-page');
-
-  if(!pages.length){
-    alert('Generate board first');
-    return;
-  }
+async function exportPDF(compressed){
+  const pages=boardWrap.querySelectorAll('.storyboard-page');
+  if(!pages.length){ alert('Generate board first'); return; }
 
   exportOverlay.classList.add('active');
-  document.querySelector('.export-box').textContent = 'Building PDF…';
+  exportBox.textContent='Building PDF…';
 
   try{
-    const { jsPDF } = window.jspdf;
+    const {jsPDF}=window.jspdf;
+    const firstPage=pages[0];
+    const pdfOrientation=firstPage.classList.contains('landscape')?'landscape':'portrait';
+    const pdfFormat=firstPage.classList.contains('a4')?'a4':'letter';
 
-    // Determine orientation from first page class
-    const firstPage = pages[0];
-    const isLandscape = firstPage.classList.contains('landscape');
-    const isA4 = firstPage.classList.contains('a4');
+    const pdf=new jsPDF({ orientation:pdfOrientation, unit:'mm', format:pdfFormat, compress:true });
+    const pdfW=pdf.internal.pageSize.getWidth();
+    const pdfH=pdf.internal.pageSize.getHeight();
 
-    const pdfOrientation = isLandscape ? 'landscape' : 'portrait';
-    const pdfFormat = isA4 ? 'a4' : 'letter';
+    // scale: full=3, compressed=1.5; quality: full=0.95, compressed=0.6
+    const scale   = compressed ? 1.5 : 3;
+    const quality = compressed ? 0.60 : 0.95;
+    const fmt     = compressed ? 'JPEG' : 'JPEG';
 
-    const pdf = new jsPDF({
-      orientation: pdfOrientation,
-      unit: 'mm',
-      format: pdfFormat,
-      compress: true
-    });
-
-    const pdfWidth  = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    for(let i=0; i<pages.length; i++){
-
-      document.querySelector('.export-box').textContent =
-        `Rendering page ${i+1} of ${pages.length}…`;
-
-      const canvas = await html2canvas(pages[i],{
-        scale:2,
+    for(let i=0;i<pages.length;i++){
+      exportBox.textContent=`Rendering page ${i+1} of ${pages.length}…`;
+      const canvas=await html2canvas(pages[i],{
+        scale,
         backgroundColor:'#ffffff',
         useCORS:true,
         logging:false,
-        allowTaint:true
+        allowTaint:true,
+        imageTimeout:0
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
-      const imgW = canvas.width;
-      const imgH = canvas.height;
+      const imgData=canvas.toDataURL('image/jpeg',quality);
+      const imgW=canvas.width, imgH=canvas.height;
+      const ratio=Math.min(pdfW/imgW, pdfH/imgH);
+      const w=imgW*ratio, h=imgH*ratio;
+      const x=(pdfW-w)/2, y=(pdfH-h)/2;
 
-      // Fit image to PDF page maintaining aspect ratio
-      const ratio = Math.min(pdfWidth / imgW, pdfHeight / imgH);
-      const w = imgW * ratio;
-      const h = imgH * ratio;
-      const x = (pdfWidth  - w) / 2;
-      const y = (pdfHeight - h) / 2;
-
-      if(i > 0) pdf.addPage(pdfFormat, pdfOrientation);
-
-      pdf.addImage(imgData, 'JPEG', x, y, w, h);
+      if(i>0) pdf.addPage(pdfFormat,pdfOrientation);
+      pdf.addImage(imgData,'JPEG',x,y,w,h);
     }
 
-    const title = document.getElementById('projTitle').value || 'storyboard';
-    pdf.save(`${title}.pdf`);
-
-  }catch(e){
-    alert('PDF export failed: '+e.message);
-    console.error(e);
-  }
+    const title=document.getElementById('projTitle').value||'storyboard';
+    const suffix=compressed?'_compressed':'_fullquality';
+    pdf.save(`${title}${suffix}.pdf`);
+  }catch(e){ alert('PDF export failed: '+e.message); console.error(e); }
 
   exportOverlay.classList.remove('active');
-});
+}
 
-/* save */
-
-document.getElementById('saveStoryboardBtn')
-.addEventListener('click', ()=>{
-
-  const data = {
+/* ═══════════════════════════════════════════════════
+   SAVE / LOAD
+═══════════════════════════════════════════════════ */
+document.getElementById('saveStoryboardBtn').addEventListener('click', ()=>{
+  const data={
     title:document.getElementById('projTitle').value,
+    author:document.getElementById('projAuthor').value,
     scene:document.getElementById('sceneNum').value,
     cols:document.getElementById('colCount').value,
     fit:document.getElementById('imgFit').value,
@@ -1196,63 +738,31 @@ document.getElementById('saveStoryboardBtn')
     orientation:document.getElementById('orientation').value,
     panels
   };
-
-  const blob = new Blob(
-    [JSON.stringify(data,null,2)],
-    {type:'application/json'}
-  );
-
-  const a = document.createElement('a');
-
-  a.href = URL.createObjectURL(blob);
-
-  a.download =
-  `${data.title || 'storyboard'}.storyboard`;
-
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`${data.title||'storyboard'}.storyboard`;
   a.click();
 });
 
-/* load */
-
-document.getElementById('loadStoryboardInput')
-.addEventListener('change', async e=>{
-
-  const file = e.target.files[0];
-
+document.getElementById('loadStoryboardInput').addEventListener('change', async e=>{
+  const file=e.target.files[0];
   if(!file) return;
-
-  const text = await file.text();
-
-  const data = JSON.parse(text);
-
-  document.getElementById('projTitle').value=data.title;
-
-  document.getElementById('sceneNum').value=data.scene;
-
-  document.getElementById('colCount').value=data.cols;
-
-  document.getElementById('imgFit').value=data.fit;
-
-  document.getElementById('pageSize').value=data.pageSize;
-
-  document.getElementById('orientation').value=data.orientation;
-
-  panels = data.panels;
-
-  rebuildEditor();
-
-  generateBtn.disabled = false;
-
-  updateUploadLabel();
-
-  autoSaveLocal();
+  const data=JSON.parse(await file.text());
+  document.getElementById('projTitle').value=data.title||'';
+  document.getElementById('projAuthor').value=data.author||'';
+  document.getElementById('sceneNum').value=data.scene||'001';
+  document.getElementById('colCount').value=data.cols||'2';
+  document.getElementById('imgFit').value=data.fit||'';
+  document.getElementById('pageSize').value=data.pageSize||'a4';
+  document.getElementById('orientation').value=data.orientation||'landscape';
+  panels=data.panels.map(p=>({...p,strokes:p.strokes||[]}));
+  rebuildEditor(); generateBtn.disabled=false; updateUploadLabel(); autoSaveLocal();
 });
 
-/* auto save */
-
 function autoSaveLocal(){
-  const data = {
+  const data={
     title:document.getElementById('projTitle').value,
+    author:document.getElementById('projAuthor').value,
     scene:document.getElementById('sceneNum').value,
     cols:document.getElementById('colCount').value,
     fit:document.getElementById('imgFit').value,
@@ -1260,79 +770,1038 @@ function autoSaveLocal(){
     orientation:document.getElementById('orientation').value,
     panels
   };
-
-  localStorage.setItem('storyboardDraft',JSON.stringify(data));
+  try{ localStorage.setItem('storyboardDraft',JSON.stringify(data)); }catch(e){}
 }
 
 function loadFromLocal(){
-  const saved = localStorage.getItem('storyboardDraft');
-
-  if(!saved) return;
-
   try{
-    const data = JSON.parse(saved);
+    const saved=localStorage.getItem('storyboardDraft');
+    if(!saved) return;
+    const data=JSON.parse(saved);
+    document.getElementById('projTitle').value=data.title||'';
+    document.getElementById('projAuthor').value=data.author||'';
+    document.getElementById('sceneNum').value=data.scene||'001';
+    document.getElementById('colCount').value=data.cols||'2';
+    document.getElementById('imgFit').value=data.fit||'';
+    document.getElementById('pageSize').value=data.pageSize||'a4';
+    document.getElementById('orientation').value=data.orientation||'landscape';
+    panels=data.panels.map(p=>({...p,strokes:p.strokes||[]}));
+    rebuildEditor(); generateBtn.disabled=panels.length===0; updateUploadLabel();
+  }catch(e){ console.log('Could not restore draft'); }
+}
 
-    document.getElementById('projTitle').value=data.title;
+function clearBoard(){ boardWrap.innerHTML=''; boardWrap.style.display='none'; boardActions.style.display='none'; }
+function esc(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function updateUploadLabel(){ const c=panels.length; document.querySelector('.upload-zone span').textContent=c===0?'Drop images here or click to upload':`${c} panel${c!==1?'s':''} loaded`; }
+async function fileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
-    document.getElementById('sceneNum').value=data.scene;
+/* ═══════════════════════════════════════════════════
+   COLOR WHEEL
+═══════════════════════════════════════════════════ */
+const cwPopup    = document.getElementById('colorwheel-popup');
+const cwCanvas   = document.getElementById('cw-canvas');
+const cwCtx      = cwCanvas.getContext('2d');
+const cwBrightness = document.getElementById('cw-brightness');
+const cwHex      = document.getElementById('cw-hex');
+const cwPreview  = document.getElementById('cw-preview');
+const miniWheelCanvas = document.getElementById('dt-wheel-canvas');
 
-    document.getElementById('colCount').value=data.cols;
+let cwHue=0, cwSat=100, cwBright=100;
 
-    document.getElementById('imgFit').value=data.fit;
+function drawColorWheel(ctx, size, brightness){
+  const cx=size/2, cy=size/2, r=size/2-1;
+  for(let angle=0;angle<360;angle++){
+    const startAngle=(angle-1)*Math.PI/180;
+    const endAngle=(angle+1)*Math.PI/180;
+    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    grad.addColorStop(0,`hsl(${angle},0%,${brightness}%)`);
+    grad.addColorStop(1,`hsl(${angle},100%,${brightness/2}%)`);
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,startAngle,endAngle);
+    ctx.closePath();
+    ctx.fillStyle=grad;
+    ctx.fill();
+  }
+}
 
-    document.getElementById('pageSize').value=data.pageSize;
+function initColorWheel(){
+  drawColorWheel(cwCtx,180,cwBright);
+  drawMiniWheel();
+}
 
-    document.getElementById('orientation').value=data.orientation;
+function drawMiniWheel(){
+  const ctx=miniWheelCanvas.getContext('2d');
+  drawColorWheel(ctx,24,100);
+}
 
-    panels = data.panels;
+cwBrightness.addEventListener('input',()=>{
+  cwBright=+cwBrightness.value;
+  cwCtx.clearRect(0,0,180,180);
+  drawColorWheel(cwCtx,180,cwBright);
+});
 
+cwCanvas.addEventListener('click',e=>{
+  const rect=cwCanvas.getBoundingClientRect();
+  const x=e.clientX-rect.left, y=e.clientY-rect.top;
+  const cx=90,cy=90;
+  const dx=x-cx, dy=y-cy;
+  const angle=Math.atan2(dy,dx)*180/Math.PI;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const r=88;
+  cwHue=((angle+360)%360);
+  cwSat=Math.min(100,(dist/r)*100);
+  const hslColor=`hsl(${cwHue},${cwSat.toFixed(0)}%,${(cwBright*0.5).toFixed(0)}%)`;
+  // convert to hex
+  const tmp=document.createElement('canvas'); tmp.width=1; tmp.height=1;
+  const tc=tmp.getContext('2d'); tc.fillStyle=hslColor; tc.fillRect(0,0,1,1);
+  const [r2,g,b]=tc.getImageData(0,0,1,1).data;
+  const hex='#'+[r2,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  cwHex.value=hex;
+  cwPreview.style.background=hex;
+});
+
+document.getElementById('cw-apply').addEventListener('click',()=>{
+  const c=cwHex.value;
+  if(/^#[0-9a-fA-F]{6}$/.test(c)){
+    drawColor=c;
+    addRecentColor(c);
+    updateColorUI();
+    if(selectedIdxs.size>0){
+      selectedIdxs.forEach(i=>{ drawStrokes[i].color=c; });
+      renderDrawSVG();
+    }
+  }
+  cwPopup.classList.remove('active');
+});
+
+cwHex.addEventListener('input',()=>{
+  if(/^#[0-9a-fA-F]{6}$/.test(cwHex.value)) cwPreview.style.background=cwHex.value;
+});
+
+document.getElementById('cw-close').addEventListener('click',()=>cwPopup.classList.remove('active'));
+
+document.getElementById('dt-wheel-wrap').addEventListener('click',e=>{
+  const rect=e.currentTarget.getBoundingClientRect();
+  cwPopup.style.left=rect.left+'px';
+  cwPopup.style.top=(rect.bottom+4)+'px';
+  cwHex.value=drawColor;
+  cwPreview.style.background=drawColor;
+  cwPopup.classList.add('active');
+  initColorWheel();
+});
+
+/* ═══════════════════════════════════════════════════
+   DRAWING ENGINE
+═══════════════════════════════════════════════════ */
+const SVG_W=1600, SVG_H=900;
+
+let drawPanelIdx  = -1;
+let drawStrokes   = [];
+let drawHistory   = [];
+let drawRedo      = [];
+let drawTool      = 'pen';
+let drawColor     = '#e74c3c';
+let drawWidth     = 3;
+let drawOpacity   = 100;
+let drawFill      = 'none';
+let drawStab      = 0;         // stabilizer 0-20
+let recentColors  = ['#e74c3c','#f39c12','#2ecc71','#3498db','#9b59b6','#1a1a1a','#ffffff','#e67e22'];
+let selectedIdxs  = new Set(); // multi-selection
+let clipboard     = [];        // copied strokes
+
+// pen state
+let isPointerDown = false;
+let currentPath   = null;
+let previewEl     = null;
+let startPt       = null;
+let rawPoints     = [];        // for stabilizer
+
+// bezier pen state
+let bezierPoints  = [];        // [{x,y,cp1x,cp1y,cp2x,cp2y}]
+let bezierActive  = false;
+let bezierPreviewPt = null;
+
+// lasso state
+let lassoPoints   = [];
+let lassoEl       = null;
+
+// transform state
+let transformType   = null;
+let transformIdx    = -1;      // single-stroke transform
+let transformHandle = null;
+let transformStart  = null;
+let transformOrig   = null;
+
+// multi-select drag
+let multiDragActive = false;
+let multiDragStart  = null;
+let multiDragOrig   = [];
+
+const drawOverlay    = document.getElementById('draw-overlay');
+const drawSVG        = document.getElementById('draw-svg');
+const drawBgImg      = document.getElementById('draw-bg-img');
+const drawStage      = document.getElementById('draw-stage');
+const drawModePill   = document.getElementById('draw-mode-pill');
+const drawPanelStrip = document.getElementById('draw-panel-strip');
+const colorInput     = document.getElementById('dt-color-input');
+const colorSwatch    = document.getElementById('dt-color-swatch');
+const recentColorsEl = document.getElementById('dt-recent-colors');
+const strokeRange    = document.getElementById('dt-stroke-range');
+const strokeSVGLine  = document.getElementById('dt-stroke-svg').querySelector('line');
+const opacityRange   = document.getElementById('dt-opacity-range');
+const opacityVal     = document.getElementById('dt-opacity-val');
+const fillBtn        = document.getElementById('dt-fill-btn');
+const fillSwatch     = document.getElementById('dt-fill-swatch');
+const fillInput      = document.getElementById('dt-fill-input');
+const stabRange      = document.getElementById('dt-stab-range');
+const stabVal        = document.getElementById('dt-stab-val');
+const bezierGroup    = document.getElementById('dt-bezier-group');
+
+/* ── Open / Close ──────────────────────────────────── */
+function openDrawOverlay(idx){
+  drawPanelIdx=idx;
+  const p=panels[idx];
+  if(!p.strokes) p.strokes=[];
+  drawStrokes=JSON.parse(JSON.stringify(p.strokes));
+  drawHistory=[]; drawRedo=[];
+  selectedIdxs=new Set();
+  bezierPoints=[]; bezierActive=false;
+  lassoPoints=[];
+
+  const maxW=window.innerWidth*0.9;
+  const maxH=(window.innerHeight-140)*0.9;
+  let sw=Math.min(maxW,maxH*(16/9));
+  let sh=sw*(9/16);
+  drawStage.style.width=sw+'px';
+  drawStage.style.height=sh+'px';
+
+  if(p.dataUrl){ drawBgImg.src=p.dataUrl; drawBgImg.style.display='block'; }
+  else { drawBgImg.src=''; drawBgImg.style.display='none'; }
+
+  drawSVG.setAttribute('viewBox',`0 0 ${SVG_W} ${SVG_H}`);
+  updateColorUI(); updateRecentColors(); buildPanelStrip(); renderDrawSVG(); setTool(drawTool);
+  drawOverlay.classList.add('active');
+  document.body.style.overflow='hidden';
+}
+
+function closeDrawOverlay(save){
+  if(save){
+    panels[drawPanelIdx].strokes=JSON.parse(JSON.stringify(drawStrokes));
+    autoSaveLocal();
     rebuildEditor();
-
-    generateBtn.disabled = panels.length===0;
-
-    updateUploadLabel();
-  }catch(e){
-    console.log('Could not restore draft');
   }
+  // clean up bezier state
+  bezierPoints=[]; bezierActive=false;
+  drawOverlay.classList.remove('active');
+  document.body.style.overflow='';
 }
 
-function clearBoard(){
-  boardWrap.innerHTML='';
-  boardWrap.style.display='none';
-  boardActions.style.display='none';
+document.getElementById('dt-done-btn').addEventListener('click',  ()=>closeDrawOverlay(true));
+document.getElementById('dt-cancel-btn').addEventListener('click',()=>closeDrawOverlay(false));
+
+/* ── Tool select ───────────────────────────────────── */
+const toolPills={
+  pen:    'Pen — freehand (Stabilizer smooths)',
+  bezier: 'Bezier — click anchors, drag handles, Finish when done',
+  line:   'Line — click & drag',
+  rect:   'Rectangle — click & drag',
+  ellipse:'Ellipse — click & drag',
+  arrow:  'Arrow — click & drag',
+  lasso:  'Lasso — draw selection area, then move/copy selected strokes',
+  select: 'Select — click stroke or drag to multi-select'
+};
+
+function setTool(t){
+  drawTool=t;
+  if(t!=='bezier'){ bezierPoints=[]; bezierActive=false; }
+  if(t!=='lasso')  lassoPoints=[];
+  if(t!=='select' && t!=='lasso') selectedIdxs=new Set();
+
+  document.querySelectorAll('#draw-toolbar .dt-btn[data-tool]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.tool===t);
+  });
+  drawModePill.textContent=toolPills[t]||t;
+  drawSVG.style.cursor=(t==='select'||t==='lasso')?'default':'crosshair';
+  bezierGroup.style.display=t==='bezier'?'flex':'none';
+  renderDrawSVG();
 }
 
-function esc(str){
-  if(!str) return '';
-  return String(str)
-  .replace(/&/g,'&amp;')
-  .replace(/</g,'&lt;')
-  .replace(/>/g,'&gt;')
-  .replace(/"/g,'&quot;')
-  .replace(/'/g,'&#039;');
+document.querySelectorAll('#draw-toolbar .dt-btn[data-tool]').forEach(b=>{
+  b.addEventListener('click',()=>setTool(b.dataset.tool));
+});
+
+/* ── Color UI ──────────────────────────────────────── */
+function updateColorUI(){
+  colorSwatch.style.background=drawColor;
+  colorInput.value=drawColor.slice(0,7);
+  strokeSVGLine.setAttribute('stroke',drawColor);
+  if(drawFill!=='none') fillSwatch.style.background=drawFill;
 }
 
-function updateUploadLabel(){
-  const count = panels.length;
-  if(count===0){
-    document.querySelector('.upload-zone span').textContent='Drop images here or click to upload';
-  }else{
-    document.querySelector('.upload-zone span').textContent=`${count} panel${count!==1?'s':''} loaded`;
+colorInput.addEventListener('input',()=>{
+  drawColor=colorInput.value;
+  addRecentColor(drawColor);
+  updateColorUI();
+  selectedIdxs.forEach(i=>{ drawStrokes[i].color=drawColor; });
+  if(selectedIdxs.size) renderDrawSVG();
+});
+
+fillInput.addEventListener('input',()=>{
+  drawFill=fillInput.value;
+  fillSwatch.style.background=drawFill;
+  selectedIdxs.forEach(i=>{ drawStrokes[i].fill=drawFill; });
+  if(selectedIdxs.size) renderDrawSVG();
+});
+
+fillBtn.addEventListener('click',()=>{
+  if(drawFill==='none'){
+    drawFill=drawColor; fillBtn.dataset.fill='color'; fillBtn.textContent='Color'; fillSwatch.style.display='block';
+  } else {
+    drawFill='none'; fillBtn.dataset.fill='none'; fillBtn.textContent='None'; fillSwatch.style.display='none';
   }
+  selectedIdxs.forEach(i=>{ drawStrokes[i].fill=drawFill; });
+  if(selectedIdxs.size) renderDrawSVG();
+});
+
+function addRecentColor(c){
+  recentColors=[c,...recentColors.filter(x=>x!==c)].slice(0,10);
+  updateRecentColors();
 }
 
-async function fileToDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = e=>resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+function updateRecentColors(){
+  recentColorsEl.innerHTML='';
+  recentColors.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='dt-recent-dot'; d.style.background=c; d.title=c;
+    d.addEventListener('click',()=>{
+      drawColor=c; addRecentColor(c); updateColorUI();
+      selectedIdxs.forEach(i=>{ drawStrokes[i].color=c; });
+      if(selectedIdxs.size) renderDrawSVG();
+    });
+    recentColorsEl.appendChild(d);
   });
 }
 
+strokeRange.addEventListener('input',()=>{
+  drawWidth=+strokeRange.value;
+  strokeSVGLine.setAttribute('stroke-width',drawWidth);
+  selectedIdxs.forEach(i=>{ drawStrokes[i].width=drawWidth; });
+  if(selectedIdxs.size) renderDrawSVG();
+});
+
+opacityRange.addEventListener('input',()=>{
+  drawOpacity=+opacityRange.value;
+  opacityVal.textContent=drawOpacity+'%';
+  selectedIdxs.forEach(i=>{ drawStrokes[i].opacity=drawOpacity; });
+  if(selectedIdxs.size) renderDrawSVG();
+});
+
+stabRange.addEventListener('input',()=>{
+  drawStab=+stabRange.value;
+  stabVal.textContent=drawStab;
+});
+
+/* ── Undo/Redo/Delete/Clear ────────────────────────── */
+function pushHistory(){
+  drawHistory.push(JSON.parse(JSON.stringify(drawStrokes)));
+  if(drawHistory.length>80) drawHistory.shift();
+  drawRedo=[];
+}
+
+document.getElementById('dt-undo-btn').addEventListener('click',()=>{
+  if(!drawHistory.length) return;
+  drawRedo.push(JSON.parse(JSON.stringify(drawStrokes)));
+  drawStrokes=drawHistory.pop(); selectedIdxs=new Set(); renderDrawSVG();
+});
+document.getElementById('dt-redo-btn').addEventListener('click',()=>{
+  if(!drawRedo.length) return;
+  drawHistory.push(JSON.parse(JSON.stringify(drawStrokes)));
+  drawStrokes=drawRedo.pop(); selectedIdxs=new Set(); renderDrawSVG();
+});
+document.getElementById('dt-delete-btn').addEventListener('click',()=>{
+  if(!selectedIdxs.size) return;
+  pushHistory();
+  const indices=[...selectedIdxs].sort((a,b)=>b-a);
+  indices.forEach(i=>drawStrokes.splice(i,1));
+  selectedIdxs=new Set(); renderDrawSVG();
+});
+document.getElementById('dt-clear-btn').addEventListener('click',()=>{
+  if(!drawStrokes.length) return;
+  if(!confirm('Clear all strokes?')) return;
+  pushHistory(); drawStrokes=[]; selectedIdxs=new Set(); renderDrawSVG();
+});
+
+/* ── Copy / Paste ──────────────────────────────────── */
+document.getElementById('dt-copy-btn').addEventListener('click', doCopy);
+document.getElementById('dt-paste-btn').addEventListener('click', doPaste);
+
+function doCopy(){
+  if(!selectedIdxs.size){ alert('Select strokes first'); return; }
+  clipboard=[];
+  selectedIdxs.forEach(i=> clipboard.push(JSON.parse(JSON.stringify(drawStrokes[i]))));
+}
+
+function doPaste(){
+  if(!clipboard.length){ alert('Nothing to paste'); return; }
+  pushHistory();
+  const offset=30;
+  const newStrokes=clipboard.map(s=>{
+    const c=JSON.parse(JSON.stringify(s));
+    offsetStroke(c,offset,offset);
+    return c;
+  });
+  const newIdxStart=drawStrokes.length;
+  drawStrokes.push(...newStrokes);
+  selectedIdxs=new Set(newStrokes.map((_,i)=>newIdxStart+i));
+  // update clipboard to pasted offset so repeated paste cascades
+  clipboard=newStrokes.map(s=>JSON.parse(JSON.stringify(s)));
+  renderDrawSVG();
+}
+
+function offsetStroke(s,dx,dy){
+  if(s.type==='pen'||s.type==='bezier'){
+    s.d=s.d.replace(/(-?[\d.]+),(-?[\d.]+)/g,(m,x,y)=>`${(+x+dx).toFixed(1)},${(+y+dy).toFixed(1)}`);
+  } else if(s.x1!==undefined){
+    s.x1+=dx; s.y1+=dy; s.x2+=dx; s.y2+=dy;
+  }
+}
+
+/* ── Keyboard shortcuts ────────────────────────────── */
+document.addEventListener('keydown',e=>{
+  if(!drawOverlay.classList.contains('active')) return;
+  const mod=e.ctrlKey||e.metaKey;
+
+  if(mod && e.key==='z' && !e.shiftKey){ e.preventDefault(); document.getElementById('dt-undo-btn').click(); return; }
+  if((mod && (e.key==='Z'||e.key==='y'))){ e.preventDefault(); document.getElementById('dt-redo-btn').click(); return; }
+  if(mod && e.key==='c'){ e.preventDefault(); doCopy(); return; }
+  if(mod && e.key==='v'){ e.preventDefault(); doPaste(); return; }
+  if(mod && e.key==='a'){
+    e.preventDefault();
+    selectedIdxs=new Set(drawStrokes.map((_,i)=>i));
+    renderDrawSVG(); return;
+  }
+  if((e.key==='Delete'||e.key==='Backspace') && selectedIdxs.size){ document.getElementById('dt-delete-btn').click(); return; }
+  if(e.key==='Escape'){
+    if(bezierActive){ bezierPoints=[]; bezierActive=false; renderDrawSVG(); }
+    else if(selectedIdxs.size){ selectedIdxs=new Set(); renderDrawSVG(); }
+    else closeDrawOverlay(false);
+    return;
+  }
+  // tool shortcuts
+  const toolKeys={p:'pen',b:'bezier',l:'line',r:'rect',e:'ellipse',a:'arrow',s:'select',L:'lasso'};
+  if(!mod && toolKeys[e.key]) setTool(toolKeys[e.key]);
+});
+
+/* ── SVG coordinate helper ─────────────────────────── */
+function svgPt(e){
+  const rect=drawSVG.getBoundingClientRect();
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  const cy=e.touches?e.touches[0].clientY:e.clientY;
+  return { x:(cx-rect.left)*(SVG_W/rect.width), y:(cy-rect.top)*(SVG_H/rect.height) };
+}
+
+/* ── Stabilizer ────────────────────────────────────── */
+function stabilize(pts, strength){
+  if(strength===0||pts.length<3) return pts;
+  const w=strength/20; // 0..1
+  const smoothed=[pts[0]];
+  for(let i=1;i<pts.length-1;i++){
+    smoothed.push({
+      x: pts[i].x*(1-w) + ((pts[i-1].x+pts[i+1].x)/2)*w,
+      y: pts[i].y*(1-w) + ((pts[i-1].y+pts[i+1].y)/2)*w
+    });
+  }
+  smoothed.push(pts[pts.length-1]);
+  return strength>5 ? stabilize(smoothed,strength-5) : smoothed;
+}
+
+function ptsToPathD(pts){
+  if(!pts.length) return '';
+  let d=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for(let i=1;i<pts.length;i++) d+=` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
+  return d;
+}
+
+/* ── Pointer Events ────────────────────────────────── */
+drawSVG.addEventListener('pointerdown', onPD);
+drawSVG.addEventListener('pointermove', onPM);
+drawSVG.addEventListener('pointerup',   onPU);
+drawSVG.addEventListener('pointercancel',onPU);
+
+function onPD(e){
+  if(drawTool==='select'||drawTool==='lasso') return; // handled by hit areas
+  if(drawTool==='bezier'){ onBezierClick(e); return; }
+  e.preventDefault();
+  drawSVG.setPointerCapture(e.pointerId);
+  isPointerDown=true;
+  startPt=svgPt(e);
+  rawPoints=[startPt];
+
+  if(drawTool==='pen'){
+    currentPath={type:'pen',d:`M${startPt.x.toFixed(1)},${startPt.y.toFixed(1)}`,
+      color:drawColor,width:drawWidth,opacity:drawOpacity,fill:'none'};
+    previewEl=makeSVGEls(currentPath,'http://www.w3.org/2000/svg')[0];
+    drawSVG.appendChild(previewEl);
+  } else if(drawTool==='lasso'){
+    lassoPoints=[startPt];
+  } else {
+    currentPath={type:drawTool,x1:startPt.x,y1:startPt.y,x2:startPt.x,y2:startPt.y,
+      color:drawColor,width:drawWidth,opacity:drawOpacity,fill:drawFill};
+  }
+}
+
+function onPM(e){
+  if(!isPointerDown) return;
+  e.preventDefault();
+  const pt=svgPt(e);
+
+  if(drawTool==='pen'){
+    rawPoints.push(pt);
+    // live preview with light smoothing
+    const smoothed=drawStab>0?stabilize(rawPoints,Math.min(drawStab,5)):rawPoints;
+    currentPath.d=ptsToPathD(smoothed);
+    if(previewEl) previewEl.setAttribute('d',currentPath.d);
+  } else {
+    currentPath.x2=pt.x; currentPath.y2=pt.y;
+    if(previewEl) previewEl.remove();
+    const els=makeSVGEls(currentPath,'http://www.w3.org/2000/svg');
+    previewEl=els[0];
+    if(previewEl){ previewEl.style.pointerEvents='none'; drawSVG.appendChild(previewEl); }
+  }
+}
+
+function onPU(e){
+  if(!isPointerDown) return;
+  isPointerDown=false;
+  if(previewEl){ previewEl.remove(); previewEl=null; }
+  if(!currentPath) return;
+
+  if(drawTool==='pen'){
+    const smoothed=stabilize(rawPoints,drawStab);
+    currentPath.d=ptsToPathD(smoothed);
+    rawPoints=[];
+    if(currentPath.d.length<8){ currentPath=null; return; }
+  } else {
+    const dx=currentPath.x2-currentPath.x1,dy=currentPath.y2-currentPath.y1;
+    if(Math.abs(dx)<2&&Math.abs(dy)<2){ currentPath=null; return; }
+  }
+
+  pushHistory();
+  drawStrokes.push(currentPath);
+  currentPath=null;
+  renderDrawSVG();
+}
+
+/* ── Bezier Pen Tool ───────────────────────────────── */
+// Full Illustrator-style bezier pen:
+// - Click: sharp anchor
+// - Click+drag: smooth anchor with mirrored handles
+// - Finish button or double-click closes/finishes path
+
+let bezierDragging=false;
+let bezierDragStart=null;
+
+function onBezierClick(e){
+  e.preventDefault();
+  const pt=svgPt(e);
+  bezierActive=true;
+
+  // drag handle detection
+  drawSVG.setPointerCapture(e.pointerId);
+  bezierDragStart=pt;
+  bezierDragging=false;
+
+  const onMove=ev=>{
+    const mp=svgPt(ev);
+    const dx=mp.x-bezierDragStart.x, dy=mp.y-bezierDragStart.y;
+    bezierDragging=(Math.abs(dx)>3||Math.abs(dy)>3);
+    if(bezierDragging) bezierPreviewPt={...pt,cp2x:mp.x,cp2y:mp.y,cp1x:2*pt.x-mp.x,cp1y:2*pt.y-mp.y};
+    renderDrawSVG();
+  };
+
+  const onUp=ev=>{
+    drawSVG.removeEventListener('pointermove',onMove);
+    drawSVG.removeEventListener('pointerup',onUp);
+    const mp=svgPt(ev);
+    const dx=mp.x-bezierDragStart.x, dy=mp.y-bezierDragStart.y;
+    const isDrag=Math.abs(dx)>3||Math.abs(dy)>3;
+
+    if(isDrag){
+      bezierPoints.push({x:pt.x,y:pt.y,cp1x:2*pt.x-mp.x,cp1y:2*pt.y-mp.y,cp2x:mp.x,cp2y:mp.y,smooth:true});
+    } else {
+      bezierPoints.push({x:pt.x,y:pt.y,cp1x:pt.x,cp1y:pt.y,cp2x:pt.x,cp2y:pt.y,smooth:false});
+    }
+    bezierPreviewPt=null;
+    renderDrawSVG();
+  };
+
+  drawSVG.addEventListener('pointermove',onMove);
+  drawSVG.addEventListener('pointerup',onUp);
+}
+
+document.getElementById('dt-bezier-finish-btn').addEventListener('click',finishBezier);
+document.getElementById('dt-bezier-close-btn').addEventListener('click',()=>{ if(bezierPoints.length>2){ finishBezier(true); }});
+
+function finishBezier(close=false){
+  if(bezierPoints.length<2){ bezierPoints=[]; bezierActive=false; renderDrawSVG(); return; }
+  const d=buildBezierPath(bezierPoints, close);
+  pushHistory();
+  drawStrokes.push({type:'bezier',d,color:drawColor,width:drawWidth,opacity:drawOpacity,fill:drawFill});
+  bezierPoints=[]; bezierActive=false;
+  renderDrawSVG();
+}
+
+function buildBezierPath(pts, close){
+  if(!pts.length) return '';
+  let d=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for(let i=1;i<pts.length;i++){
+    const prev=pts[i-1];
+    const cur=pts[i];
+    d+=` C${prev.cp2x.toFixed(1)},${prev.cp2y.toFixed(1)} ${cur.cp1x.toFixed(1)},${cur.cp1y.toFixed(1)} ${cur.x.toFixed(1)},${cur.y.toFixed(1)}`;
+  }
+  if(close){
+    const last=pts[pts.length-1];
+    const first=pts[0];
+    d+=` C${last.cp2x.toFixed(1)},${last.cp2y.toFixed(1)} ${first.cp1x.toFixed(1)},${first.cp1y.toFixed(1)} ${first.x.toFixed(1)},${first.y.toFixed(1)} Z`;
+  }
+  return d;
+}
+
+/* ── Lasso Tool ────────────────────────────────────── */
+let lassoPointerDown=false;
+
+// Lasso uses its own event listeners added to drawSVG when tool=lasso
+drawSVG.addEventListener('pointerdown', e=>{
+  if(drawTool!=='lasso') return;
+  e.preventDefault();
+  drawSVG.setPointerCapture(e.pointerId);
+  lassoPointerDown=true;
+  lassoPoints=[svgPt(e)];
+  renderDrawSVG();
+});
+
+drawSVG.addEventListener('pointermove', e=>{
+  if(drawTool!=='lasso'||!lassoPointerDown) return;
+  e.preventDefault();
+  lassoPoints.push(svgPt(e));
+  renderLassoPreview();
+});
+
+drawSVG.addEventListener('pointerup', e=>{
+  if(drawTool!=='lasso'||!lassoPointerDown) return;
+  lassoPointerDown=false;
+  // find strokes whose bbox centroid is inside lasso polygon
+  const inside=drawStrokes.map((s,i)=>{
+    const bb=getBBox(s);
+    const cx=bb.x+bb.w/2, cy=bb.y+bb.h/2;
+    return pointInPolygon(cx,cy,lassoPoints)?i:-1;
+  }).filter(i=>i>=0);
+  selectedIdxs=new Set(inside);
+  lassoPoints=[];
+  renderDrawSVG();
+});
+
+function renderLassoPreview(){
+  // draw the lasso outline on svg
+  const existing=drawSVG.querySelector('.lasso-preview');
+  if(existing) existing.remove();
+  if(lassoPoints.length<2) return;
+  const ns='http://www.w3.org/2000/svg';
+  const poly=document.createElementNS(ns,'polygon');
+  poly.setAttribute('points',lassoPoints.map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('class','lasso-preview');
+  drawSVG.appendChild(poly);
+}
+
+function pointInPolygon(x,y,pts){
+  let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i].x,yi=pts[i].y,xj=pts[j].x,yj=pts[j].y;
+    if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+/* ── SVG element factory ───────────────────────────── */
+function makeSVGEls(s, ns='http://www.w3.org/2000/svg'){
+  ns=ns||'http://www.w3.org/2000/svg';
+  const op=(s.opacity||100)/100;
+  const base={stroke:s.color||'#e74c3c','stroke-width':s.width||3,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op,fill:s.fill||'none'};
+  function applyBase(el){ Object.entries(base).forEach(([k,v])=>el.setAttribute(k,v)); return el; }
+
+  if(s.type==='pen'||s.type==='bezier'){
+    const el=document.createElementNS(ns,'path');
+    el.setAttribute('d',s.d||'');
+    return [applyBase(el)];
+  }
+  if(s.type==='line'){
+    const el=document.createElementNS(ns,'line');
+    el.setAttribute('x1',s.x1); el.setAttribute('y1',s.y1);
+    el.setAttribute('x2',s.x2); el.setAttribute('y2',s.y2);
+    return [applyBase(el)];
+  }
+  if(s.type==='rect'){
+    const [x,y,w,h]=normRect(s.x1,s.y1,s.x2,s.y2);
+    const el=document.createElementNS(ns,'rect');
+    el.setAttribute('x',x); el.setAttribute('y',y); el.setAttribute('width',w||1); el.setAttribute('height',h||1);
+    return [applyBase(el)];
+  }
+  if(s.type==='ellipse'){
+    const cx=(s.x1+s.x2)/2, cy=(s.y1+s.y2)/2;
+    const rx=Math.abs(s.x2-s.x1)/2||1, ry=Math.abs(s.y2-s.y1)/2||1;
+    const el=document.createElementNS(ns,'ellipse');
+    el.setAttribute('cx',cx); el.setAttribute('cy',cy); el.setAttribute('rx',rx); el.setAttribute('ry',ry);
+    return [applyBase(el)];
+  }
+  if(s.type==='arrow'){
+    const id='ah'+Math.random().toString(36).slice(2,8);
+    const aw=Math.max((s.width||3)*3,12);
+    const defs=document.createElementNS(ns,'defs');
+    const marker=document.createElementNS(ns,'marker');
+    marker.setAttribute('id',id); marker.setAttribute('markerWidth',aw); marker.setAttribute('markerHeight',aw);
+    marker.setAttribute('refX',aw-1); marker.setAttribute('refY',aw/2); marker.setAttribute('orient','auto');
+    const poly=document.createElementNS(ns,'polygon');
+    poly.setAttribute('points',`0 0, ${aw} ${aw/2}, 0 ${aw}`); poly.setAttribute('fill',s.color||'#e74c3c'); poly.setAttribute('opacity',op);
+    marker.appendChild(poly); defs.appendChild(marker);
+    const line=document.createElementNS(ns,'line');
+    line.setAttribute('x1',s.x1); line.setAttribute('y1',s.y1); line.setAttribute('x2',s.x2); line.setAttribute('y2',s.y2);
+    applyBase(line); line.setAttribute('marker-end',`url(#${id})`);
+    return [defs,line];
+  }
+  return [document.createElementNS(ns,'g')];
+}
+
+function normRect(x1,y1,x2,y2){ return [Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1)]; }
+
+function getBBox(s){
+  if(s.type==='pen'||s.type==='bezier'){
+    const pts=[];
+    const re=/(-?[\d.]+),(-?[\d.]+)/g; let m;
+    while((m=re.exec(s.d))!==null) pts.push({x:+m[1],y:+m[2]});
+    if(!pts.length) return {x:0,y:0,w:1,h:1};
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys);
+    return {x,y,w:Math.max(...xs)-x||1,h:Math.max(...ys)-y||1};
+  }
+  return {x:Math.min(s.x1,s.x2),y:Math.min(s.y1,s.y2),w:Math.abs(s.x2-s.x1)||1,h:Math.abs(s.y2-s.y1)||1};
+}
+
+/* ── Render draw SVG ───────────────────────────────── */
+function renderDrawSVG(){
+  drawSVG.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+
+  drawStrokes.forEach((s,i)=>{
+    const isSelected=selectedIdxs.has(i);
+    const els=makeSVGEls(s,ns);
+    els.forEach(el=>drawSVG.appendChild(el));
+
+    // hit area
+    const makeHit=()=>{
+      let h;
+      if(s.type==='pen'||s.type==='bezier'){
+        h=document.createElementNS(ns,'path'); h.setAttribute('d',s.d||'');
+        h.style.cssText='pointer-events:stroke;cursor:pointer;fill:transparent;stroke:transparent;stroke-width:18;';
+      } else if(s.type==='line'||s.type==='arrow'){
+        h=document.createElementNS(ns,'line');
+        h.setAttribute('x1',s.x1); h.setAttribute('y1',s.y1); h.setAttribute('x2',s.x2); h.setAttribute('y2',s.y2);
+        h.style.cssText='pointer-events:stroke;cursor:pointer;fill:transparent;stroke:transparent;stroke-width:18;';
+      } else if(s.type==='rect'){
+        const [x,y,w,hh]=normRect(s.x1,s.y1,s.x2,s.y2);
+        h=document.createElementNS(ns,'rect'); h.setAttribute('x',x); h.setAttribute('y',y); h.setAttribute('width',w||1); h.setAttribute('height',hh||1);
+        h.style.cssText='pointer-events:all;cursor:pointer;fill:transparent;stroke:transparent;stroke-width:8;';
+      } else if(s.type==='ellipse'){
+        const cx=(s.x1+s.x2)/2,cy=(s.y1+s.y2)/2,rx=Math.abs(s.x2-s.x1)/2||1,ry=Math.abs(s.y2-s.y1)/2||1;
+        h=document.createElementNS(ns,'ellipse'); h.setAttribute('cx',cx); h.setAttribute('cy',cy); h.setAttribute('rx',rx); h.setAttribute('ry',ry);
+        h.style.cssText='pointer-events:all;cursor:pointer;fill:transparent;stroke:transparent;stroke-width:8;';
+      }
+      return h;
+    };
+
+    if(drawTool==='select'||drawTool==='lasso'){
+      const h=makeHit();
+      if(h){
+        h.addEventListener('pointerdown',e=>{
+          e.stopPropagation();
+          if(e.shiftKey){ if(selectedIdxs.has(i)) selectedIdxs.delete(i); else selectedIdxs.add(i); }
+          else { selectedIdxs=new Set([i]); }
+          // sync toolbar
+          if(selectedIdxs.size===1){
+            const ss=drawStrokes[i];
+            drawColor=ss.color||'#e74c3c'; drawWidth=ss.width||3; drawOpacity=ss.opacity||100; drawFill=ss.fill||'none';
+            colorInput.value=drawColor; strokeRange.value=drawWidth;
+            opacityRange.value=drawOpacity; opacityVal.textContent=drawOpacity+'%';
+            fillBtn.textContent=drawFill==='none'?'None':'Color'; fillBtn.dataset.fill=drawFill==='none'?'none':'color';
+            fillSwatch.style.display=drawFill!=='none'?'block':'none';
+            updateColorUI();
+          }
+          renderDrawSVG();
+          // start drag-move for selected
+          if(selectedIdxs.size>0){
+            const dragStart=svgPt(e);
+            const origStrokes=drawStrokes.map(s=>JSON.parse(JSON.stringify(s)));
+            let didMove=false;
+            const onMv=ev=>{
+              const cur=svgPt(ev);
+              const ddx=cur.x-dragStart.x,ddy=cur.y-dragStart.y;
+              if(Math.abs(ddx)>2||Math.abs(ddy)>2) didMove=true;
+              selectedIdxs.forEach(si=>{
+                const orig=origStrokes[si];
+                const live=drawStrokes[si];
+                if(orig.type==='pen'||orig.type==='bezier'){
+                  live.d=orig.d.replace(/(-?[\d.]+),(-?[\d.]+)/g,(_,px,py)=>`${(+px+ddx).toFixed(1)},${(+py+ddy).toFixed(1)}`);
+                } else { live.x1=orig.x1+ddx; live.y1=orig.y1+ddy; live.x2=orig.x2+ddx; live.y2=orig.y2+ddy; }
+              });
+              renderDrawSVG();
+            };
+            const onUp2=()=>{
+              drawSVG.removeEventListener('pointermove',onMv);
+              drawSVG.removeEventListener('pointerup',onUp2);
+              if(didMove) pushHistory();
+            };
+            drawSVG.addEventListener('pointermove',onMv);
+            drawSVG.addEventListener('pointerup',onUp2);
+          }
+        });
+        drawSVG.appendChild(h);
+      }
+    }
+
+    // selection box + resize handles for single selection
+    if(isSelected && drawTool==='select' && selectedIdxs.size===1){
+      drawSelHandles(s,i);
+    } else if(isSelected){
+      // just draw highlight box for multi-select
+      const bb=getBBox(s); const pad=6;
+      const box=document.createElementNS(ns,'rect');
+      box.setAttribute('x',bb.x-pad); box.setAttribute('y',bb.y-pad);
+      box.setAttribute('width',bb.w+pad*2); box.setAttribute('height',bb.h+pad*2);
+      box.setAttribute('class','sel-box'); drawSVG.appendChild(box);
+    }
+  });
+
+  // bezier preview
+  if(bezierActive && bezierPoints.length>0){
+    const allPts=[...bezierPoints];
+    if(bezierPreviewPt) allPts.push(bezierPreviewPt);
+    const d=buildBezierPath(allPts,false);
+    const prev=document.createElementNS(ns,'path');
+    prev.setAttribute('d',d);
+    prev.setAttribute('stroke',drawColor); prev.setAttribute('stroke-width',drawWidth);
+    prev.setAttribute('stroke-dasharray','6 4'); prev.setAttribute('fill','none');
+    prev.setAttribute('opacity',(drawOpacity/100));
+    prev.style.pointerEvents='none';
+    drawSVG.appendChild(prev);
+
+    // anchor + handle dots
+    bezierPoints.forEach((pt,pi)=>{
+      const dot=document.createElementNS(ns,'circle');
+      dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y); dot.setAttribute('r',6);
+      dot.setAttribute('class','cp-anchor'); dot.style.cursor='move';
+      // drag anchor
+      dot.addEventListener('pointerdown',e=>{
+        e.stopPropagation(); drawSVG.setPointerCapture(e.pointerId);
+        const onMv=ev=>{ const mp=svgPt(ev); bezierPoints[pi].x=mp.x; bezierPoints[pi].y=mp.y; renderDrawSVG(); };
+        const onUp2=()=>{ drawSVG.removeEventListener('pointermove',onMv); drawSVG.removeEventListener('pointerup',onUp2); };
+        drawSVG.addEventListener('pointermove',onMv); drawSVG.addEventListener('pointerup',onUp2);
+      });
+      drawSVG.appendChild(dot);
+
+      if(pt.smooth){
+        // draw handle lines and dots
+        [[pt.cp1x,pt.cp1y,'cp1'],[pt.cp2x,pt.cp2y,'cp2']].forEach(([hx,hy,hid])=>{
+          const line=document.createElementNS(ns,'line');
+          line.setAttribute('x1',pt.x); line.setAttribute('y1',pt.y);
+          line.setAttribute('x2',hx); line.setAttribute('y2',hy);
+          line.setAttribute('class','cp-line'); drawSVG.appendChild(line);
+          const hdot=document.createElementNS(ns,'circle');
+          hdot.setAttribute('cx',hx); hdot.setAttribute('cy',hy); hdot.setAttribute('r',4);
+          hdot.setAttribute('class','cp-handle'); hdot.style.cursor='move';
+          hdot.addEventListener('pointerdown',e=>{
+            e.stopPropagation(); drawSVG.setPointerCapture(e.pointerId);
+            const onMv=ev=>{
+              const mp=svgPt(ev);
+              bezierPoints[pi][hid+'x']=mp.x; bezierPoints[pi][hid+'y']=mp.y;
+              if(pt.smooth){
+                // mirror opposite handle
+                const mirror=hid==='cp1'?'cp2':'cp1';
+                bezierPoints[pi][mirror+'x']=2*pt.x-mp.x;
+                bezierPoints[pi][mirror+'y']=2*pt.y-mp.y;
+              }
+              renderDrawSVG();
+            };
+            const onUp2=()=>{ drawSVG.removeEventListener('pointermove',onMv); drawSVG.removeEventListener('pointerup',onUp2); };
+            drawSVG.addEventListener('pointermove',onMv); drawSVG.addEventListener('pointerup',onUp2);
+          });
+          drawSVG.appendChild(hdot);
+        });
+      }
+    });
+  }
+
+  // lasso preview
+  if(lassoPoints.length>2) renderLassoPreview();
+}
+
+/* ── Selection handles (single stroke) ────────────── */
+function drawSelHandles(s,idx){
+  const ns='http://www.w3.org/2000/svg';
+  const bb=getBBox(s); const pad=14;
+  const x=bb.x-pad,y=bb.y-pad,w=bb.w+pad*2,h=bb.h+pad*2;
+
+  const box=document.createElementNS(ns,'rect');
+  box.setAttribute('x',x); box.setAttribute('y',y); box.setAttribute('width',w); box.setAttribute('height',h);
+  box.setAttribute('class','sel-box'); drawSVG.appendChild(box);
+
+  const hpts=[
+    {hx:x,hy:y,cur:'nw-resize',hid:'tl'},{hx:x+w/2,hy:y,cur:'n-resize',hid:'tc'},
+    {hx:x+w,hy:y,cur:'ne-resize',hid:'tr'},{hx:x+w,hy:y+h/2,cur:'e-resize',hid:'mr'},
+    {hx:x+w,hy:y+h,cur:'se-resize',hid:'br'},{hx:x+w/2,hy:y+h,cur:'s-resize',hid:'bc'},
+    {hx:x,hy:y+h,cur:'sw-resize',hid:'bl'},{hx:x,hy:y+h/2,cur:'w-resize',hid:'ml'},
+  ];
+
+  // center move
+  const mv=document.createElementNS(ns,'rect');
+  mv.setAttribute('x',x+w/2-12); mv.setAttribute('y',y+h/2-12);
+  mv.setAttribute('width',24); mv.setAttribute('height',24); mv.setAttribute('rx',4);
+  mv.setAttribute('class','sel-handle'); mv.style.cursor='move';
+  mv.addEventListener('pointerdown',e=>{ e.stopPropagation(); startTransform(e,'move',idx); });
+  drawSVG.appendChild(mv);
+
+  hpts.forEach(hp=>{
+    const h=document.createElementNS(ns,'rect');
+    h.setAttribute('x',hp.hx-7); h.setAttribute('y',hp.hy-7);
+    h.setAttribute('width',14); h.setAttribute('height',14);
+    h.setAttribute('class','sel-handle'); h.style.cursor=hp.cur;
+    h.addEventListener('pointerdown',e=>{ e.stopPropagation(); startTransform(e,'resize',idx,hp.hid); });
+    drawSVG.appendChild(h);
+  });
+}
+
+/* ── Transform (move + resize) ─────────────────────── */
+function startTransform(e,type,idx,handle){
+  e.preventDefault();
+  drawSVG.setPointerCapture(e.pointerId);
+  transformType=type; transformIdx=idx; transformHandle=handle||null;
+  transformStart=svgPt(e);
+  transformOrig=JSON.parse(JSON.stringify(drawStrokes[idx]));
+  drawSVG.addEventListener('pointermove',onTM);
+  drawSVG.addEventListener('pointerup',onTU);
+}
+
+function onTM(e){
+  if(transformIdx<0) return;
+  const pt=svgPt(e);
+  const dx=pt.x-transformStart.x, dy=pt.y-transformStart.y;
+  const s=drawStrokes[transformIdx];
+  const o=transformOrig;
+
+  if(transformType==='move'){
+    if(o.type==='pen'||o.type==='bezier'){
+      s.d=o.d.replace(/(-?[\d.]+),(-?[\d.]+)/g,(_,px,py)=>`${(+px+dx).toFixed(1)},${(+py+dy).toFixed(1)}`);
+    } else { s.x1=o.x1+dx; s.y1=o.y1+dy; s.x2=o.x2+dx; s.y2=o.y2+dy; }
+  } else {
+    const hh=transformHandle;
+    if(o.type==='pen'||o.type==='bezier'){
+      const bb=getBBox(o);
+      let nx1=bb.x,ny1=bb.y,nx2=bb.x+bb.w,ny2=bb.y+bb.h;
+      if(hh.includes('r')||hh==='mr') nx2=bb.x+bb.w+dx;
+      if(hh.includes('l')||hh==='ml') nx1=bb.x+dx;
+      if(hh.includes('b')||hh==='bc') ny2=bb.y+bb.h+dy;
+      if(hh.includes('t')||hh==='tc') ny1=bb.y+dy;
+      const scX=(nx2-nx1)/(bb.w||1), scY=(ny2-ny1)/(bb.h||1);
+      s.d=o.d.replace(/(-?[\d.]+),(-?[\d.]+)/g,(_,px,py)=>`${(nx1+(+px-bb.x)*scX).toFixed(1)},${(ny1+(+py-bb.y)*scY).toFixed(1)}`);
+    } else {
+      let {x1,y1,x2,y2}=o;
+      if(hh.includes('r')||hh==='mr') x2=o.x2+dx;
+      if(hh.includes('l')||hh==='ml') x1=o.x1+dx;
+      if(hh.includes('b')||hh==='bc') y2=o.y2+dy;
+      if(hh.includes('t')||hh==='tc') y1=o.y1+dy;
+      s.x1=x1; s.y1=y1; s.x2=x2; s.y2=y2;
+    }
+  }
+  renderDrawSVG();
+}
+
+function onTU(){
+  if(transformIdx>=0) pushHistory();
+  transformIdx=-1; transformType=null;
+  drawSVG.removeEventListener('pointermove',onTM);
+  drawSVG.removeEventListener('pointerup',onTU);
+}
+
+/* ── Panel nav strip ───────────────────────────────── */
+function buildPanelStrip(){
+  drawPanelStrip.innerHTML='';
+  panels.forEach((p,i)=>{
+    let el;
+    if(p.dataUrl){ el=document.createElement('img'); el.src=p.dataUrl; el.className='dpn-thumb'+(i===drawPanelIdx?' active':''); }
+    else { el=document.createElement('div'); el.className='dpn-empty'+(i===drawPanelIdx?' active':''); el.textContent=String(i+1).padStart(3,'0'); }
+    el.title=`Panel ${i+1}`;
+    el.addEventListener('click',()=>{
+      panels[drawPanelIdx].strokes=JSON.parse(JSON.stringify(drawStrokes));
+      drawPanelIdx=i;
+      const np=panels[i];
+      if(!np.strokes) np.strokes=[];
+      drawStrokes=JSON.parse(JSON.stringify(np.strokes));
+      drawHistory=[]; drawRedo=[]; selectedIdxs=new Set(); bezierPoints=[]; bezierActive=false;
+      if(np.dataUrl){ drawBgImg.src=np.dataUrl; drawBgImg.style.display='block'; }
+      else { drawBgImg.src=''; drawBgImg.style.display='none'; }
+      buildPanelStrip(); renderDrawSVG();
+    });
+    drawPanelStrip.appendChild(el);
+  });
+}
+
+/* ── Select-tool box drag ───────────────────────────── */
+// click on empty area = deselect; drag = rubber-band select
+drawSVG.addEventListener('pointerdown',e=>{
+  if(drawTool!=='select') return;
+  e.preventDefault();
+  drawSVG.setPointerCapture(e.pointerId);
+  const st=svgPt(e);
+  let didDrag=false;
+  let rubberEl=null;
+
+  const onMv=ev=>{
+    const cur=svgPt(ev);
+    const dx=cur.x-st.x, dy=cur.y-st.y;
+    if(Math.abs(dx)>5||Math.abs(dy)>5){
+      didDrag=true;
+      if(rubberEl) rubberEl.remove();
+      rubberEl=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rubberEl.setAttribute('x',Math.min(st.x,cur.x)); rubberEl.setAttribute('y',Math.min(st.y,cur.y));
+      rubberEl.setAttribute('width',Math.abs(dx)); rubberEl.setAttribute('height',Math.abs(dy));
+      rubberEl.setAttribute('class','sel-box'); rubberEl.style.pointerEvents='none';
+      drawSVG.appendChild(rubberEl);
+    }
+  };
+
+  const onUp2=ev=>{
+    drawSVG.removeEventListener('pointermove',onMv);
+    drawSVG.removeEventListener('pointerup',onUp2);
+    if(rubberEl) rubberEl.remove();
+    if(didDrag){
+      const cur=svgPt(ev);
+      const rx1=Math.min(st.x,cur.x),ry1=Math.min(st.y,cur.y),rx2=Math.max(st.x,cur.x),ry2=Math.max(st.y,cur.y);
+      selectedIdxs=new Set(drawStrokes.map((s,i)=>{
+        const bb=getBBox(s);
+        return (bb.x>=rx1&&bb.y>=ry1&&bb.x+bb.w<=rx2&&bb.y+bb.h<=ry2)?i:-1;
+      }).filter(i=>i>=0));
+    } else {
+      // click on empty — deselect
+      selectedIdxs=new Set();
+    }
+    renderDrawSVG();
+  };
+
+  drawSVG.addEventListener('pointermove',onMv);
+  drawSVG.addEventListener('pointerup',onUp2);
+});
+
 /* init */
 loadFromLocal();
-
 </script>
 </body>
 </html>
